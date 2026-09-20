@@ -1,0 +1,4 @@
+app
+next.config.js      ✅ garde
+package.json
+tsconfig.json       ← nouveau, va fixer le build
