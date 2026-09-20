@@ -1,7 +1,26 @@
+
 {
-  "name": "mag-core-v19-2-3-1",
+  "name": "mag-core-v19-2-3-1-unified-optimized",
   "version": "19.2.3.1",
   "private": true,
-  "scripts": { "dev": "next dev", "build": "next build", "start": "next start" },
-  "dependencies": { "next": "14.2.0", "react": "18.2.0", "react-dom": "18.2.0", "three": "0.160.0" }
+  "description": "MAG CORE V19.2.3.1 UNIFIED OPTIMIZED — FULL ARCHI + IGNITION 100% Z10.71 DEZOOM 5% + DMX Art-Net/sACN + WebGPU + Audio + MIDI + OSC + Security+ATLAS",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "14.2.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "three": "0.160.0"
+  },
+  "devDependencies": {
+    "typescript": "5.5.3",
+    "@types/node": "20.11.0",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "@types/three": "0.160.0"
+  }
 }
