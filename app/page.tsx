@@ -17,7 +17,9 @@ export default function Page(){
   const BLOOM=isMob?2.0:(bloomQ||2.0);
   let raf=0;
   let renderer:any=null;
-  let composer:any, bloom:any, analyser:any;
+  let composer:any;
+  let bloom:any;
+  let analyser:any;
   let data:[STRIPPED]
   try{
    const mount=ref.current!;
@@ -51,7 +53,9 @@ export default function Page(){
    const pos=new Float32Array(cnt*3);
    const golden=2.399963;
    for(let i=0;i<cnt;i++){
-    const th=i*golden, ph=Math.acos(1-2*i/cnt), r=0.75+Math.random()*0.6;
+    const th=i*golden;
+    const ph=Math.acos(1-2*i/cnt);
+    const r=0.75+Math.random()*0.6;
     pos[i*3]=Math.sin(ph)*Math.cos(th)*r;
     pos[i*3+1]=Math.sin(ph)*Math.sin(th)*r;
     pos[i*3+2]=Math.cos(ph)*r;
@@ -68,7 +72,9 @@ export default function Page(){
     analyser=ctx.createAnalyser();
     analyser.fftSize=256;
     data=new Uint8Array(128);
-    navigator.mediaDevices?.getUserMedia({audio:true}).then((s:any)=>{ ctx.createMediaStreamSource(s).connect(analyser); }).catch(()=>{});
+    navigator.mediaDevices?.getUserMedia({audio:true}).then((s:any)=>{
+     ctx.createMediaStreamSource(s).connect(analyser);
+    }).catch(()=>{});
    }catch{}
    const clock=new THREE.Clock();
    let t=0;
@@ -79,7 +85,9 @@ export default function Page(){
     let low=0.3,mid=0.5,high=0.4,beat=false;
     if(analyser&&data){
      analyser.getByteFrequencyData(data);
-     low=data[2]/255; mid=data[30]/255; high=data[80]/255;
+     low=data[2]/255;
+     mid=data[30]/255;
+     high=data[80]/255;
      beat=data[2]>150;
      setA({low,mid,high,beat});
     }
