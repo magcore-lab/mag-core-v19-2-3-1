@@ -1,22 +1,17 @@
-// RÉFLEXION DIAMANTALE
-branches: IOR 2.4 → 2.417 (diamant vrai)
-thickness 0.38 → 0.52 / transmission 0.92 → 0.96
-dispersion 0.12 (feux diamant) + reflectivity 0.92 + envMapIntensity 1.5
-roughness 0.04 → 0.02 / clearcoatRoughness 0.08 → 0.04
-tetra: IOR 2.15 → 2.417 / dispersion 0.18 / reflectivity 0.95 / opacity 0.08 → 0.15
+// // ELARGIR EFFET DIAMANT PARTI
+branches: Cylinder 0.0028 → 0.0042 (+50% épais) 6 → 8 côtés
+tetra 0.016 → octa 0.028 (diamant octaédrique)
+dispersion 0.12 → 0.35 (+191% feux) / 0.18 → 0.42 (+133%)
+reflectivity 0.92 → 0.96 / 0.95 → 0.98
+envMapIntensity 1.5 → 1.85
+random branches 12 → 36 (+200%) = 6 SAT + 12 inter + 36 aléatoires = 66 BRANCHES
 
-// NOYAU QUANTIQUE ACTIF DANS SON ENVIRONNEMENT
-inner: IOR 2.65 → 2.417 + dispersion 0.22 + thickness 0.52 → 0.62
-emissive 0.22 → 0.32 → ignition 0.75 → 1.15 + scale 0.96 → 1.02
-inner2: dispersion 0.18 + emissive 0.28 → 0.42 → 0.85 + scale 1.02 → 1.08
+// FX AMENTI
+3 anneaux Torus 1.4 + 0.35k / tube 0.003 / 128 segments
+MeshPhysical IOR 2.417 dispersion 0.38 opacity 0.42 emissive 0.62
+rotation x PI/2.5 + k*0.42 y k*0.78 → croix Ankh light shafts
+flow 128 → 256 (+100%) size 0.02 → 0.032
+particles 156 → 256 size 0.012 → 0.018 r 1.6+1.8=3.4 → 1.8+2.4=4.2R
+scatter 3.4R → 4.2R (+24% environnement quantique)
 
-// FRESNEL QUANTIQUE
-fresF: q = sin(uT*2.8+length(vN)*6.0)*0.12 + cos(uT*1.3+vN.x*4.0)*0.08
-→ noyau qui pulse quantiquement, pas statique
-col += vec3(0.42,0.88,1.0)*q*0.32 → reflets quantiques bleus
-
-// LUMEN GLOBAL
-branches opacity 0.82 → 0.88 emissive 1.15 → 1.45 envMap 1.2
-line 0.52 → 0.68 / tetra 0.72 → 0.88 + emissive 0.45
-Z10.2 FIXE / spatial 1.4/1.7/2.1 SAT 2.1R conservé
-DMX SYNTH + 4/4 MODS conservé
+Z10.2 FIXE / spatial 1.4/1.7/2.1 SAT 2.1R / lumen 0.88 / DMX SYNTH + 4/4 MODS
