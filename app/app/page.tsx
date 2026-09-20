@@ -1,11 +1,11 @@
+
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-// V41 80 LIGNES - IGNITION DIAMANT - NOYAU DIFFUSE DANS BRANCHES DIAMANTS - ENERGIE MAITRISEE
-// Z10.71 DEZOOM 5% + LIGHTS 800/1000 + EMISSIVE 8->12 + BLOOM 1.5->2.5 + GLOW 0.30/0.52 + 156P GOLDEN
+// V42 FIX FINAL - BUILD OK - IGNITION DIAMANT
 export default function Page(){
  const ref=useRef<HTMLDivElement>(null);
  const [on,setOn]=useState(false);
@@ -25,7 +25,6 @@ export default function Page(){
   composer.addPass(new RenderPass(scene,camera));
   const bloom=new UnrealBloomPass(new THREE.Vector2(window.innerWidth,window.innerHeight),1.5,0.3,0.15);
   composer.addPass(bloom);
-  // LIGHTS IGNITION MAX - 800/500/400/1000/600
   scene.add(new THREE.AmbientLight(0xffffff,2.0));
   const key=new THREE.PointLight(0xffffff,800,50);
   key.position.set(4,4,5); scene.add(key);
@@ -43,7 +42,6 @@ export default function Page(){
   const branchGroup=new THREE.Group(); coreGroup.add(branchGroup);
   const diamondGroup=new THREE.Group(); coreGroup.add(diamondGroup);
   const satGroup=new THREE.Group(); coreGroup.add(satGroup);
-  // CAGES BRILLANTES 0.62/0.78/0.92 - PAS GRISES
   const outer=new THREE.Mesh(new THREE.IcosahedronGeometry(0.62,3),
     new THREE.MeshBasicMaterial({color:0xffffff,wireframe:true,transparent:true,opacity:0.55}));
   cageGroup.add(outer);
@@ -53,7 +51,6 @@ export default function Page(){
   const outer3=new THREE.Mesh(new THREE.IcosahedronGeometry(0.92,1),
     new THREE.MeshBasicMaterial({color:0xffffff,wireframe:true,transparent:true,opacity:0.18}));
   cageGroup.add(outer3);
-  // BRANCHES STRUCTUREES REFLEXIONS DIAMANTS - TUBE PHYSICAL + TETRA DIAMANT
   const branches:any[]=[]; const satPos:THREE.Vector3[]=[];
   for(let i=0;i<6;i++){ const a=i*60*Math.PI/180;
     satPos.push(new THREE.Vector3(Math.cos(a)*0.62*1.15,Math.sin(a)*0.62*1.15,0)); }
@@ -93,12 +90,11 @@ export default function Page(){
   flowGeo.setAttribute('position',new THREE.BufferAttribute(flowPos,3));
   const flowMat=new THREE.PointsMaterial({color:0xffffff,size:0.032,transparent:true,opacity:0});
   branchGroup.add(new THREE.Points(flowGeo,flowMat));
-  // NOYAU DIAMANT - MIDDLE FRESNEL + INNER PHYSICAL T0.995 IOR2.65 + GLOW SPHERES
   const fresV='varying vec3 vN; varying vec3 vV; void main(){ vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.0); vV=-mv.xyz; gl_Position=projectionMatrix*mv; }';
   const fresF='varying vec3 vN; varying vec3 vV; uniform float uT; uniform float uI; uniform float uE; void main(){ float f=pow(1.0-dot(normalize(vN),normalize(vV)),1.8); float c=0.52+uI*0.48; float g=0.22+f*0.42*uI; vec3 col=vec3(0.92,0.94,1.0)*(c+g); col+=vec3(0.22,0.32,0.52)*f*uI*0.7; col*=uE; gl_FragColor=vec4(col,0.88); }';
   const middleMat=new THREE.ShaderMaterial({uniforms:{uT:{value:0},uI:{value:0},uE:{value:0.82}},vertexShader:fresV,fragmentShader:fresF,transparent:true,side:THREE.DoubleSide});
   const middle=new THREE.Mesh(new THREE.IcosahedronGeometry(0.48,5),middleMat); coreGroup.add(middle);
-  const innerMat=new THREE.MeshPhysicalMaterial({color:0xffffff,emissive:0xffffff,emissiveIntensity:0.28,transmission:0.995,thickness:0.52,ior:2.65,roughness:0.04,clearcoat:1.0,transparent:true,opacity:0.88});
+  const innerMat=new THREE.MeshPhysicalMaterial({color:0xffffff,emissiveIntensity:0.28,transmission:0.995,thickness:0.52,ior:2.65,roughness:0.04,clearcoat:1.0,transparent:true,opacity:0.88});
   const inner=new THREE.Mesh(new THREE.IcosahedronGeometry(0.22,4),innerMat); coreGroup.add(inner);
   const inner2Mat=new THREE.MeshPhysicalMaterial({color:0xffffff,emissive:0xffffff,emissiveIntensity:0.42,transmission:0.92,thickness:0.38,ior:2.15,roughness:0.03,clearcoat:1.0,transparent:true,opacity:0.92});
   const inner2=new THREE.Mesh(new THREE.IcosahedronGeometry(0.11,3),inner2Mat); coreGroup.add(inner2);
@@ -133,6 +129,7 @@ export default function Page(){
   const animate=()=>{
     raf=requestAnimationFrame(animate); t+=0.016;
     middleMat.uniforms.uT.value=t;
+    middleMat.uniforms.uI.value=0.8+Math.sin(t*3)*0.15+(ignited?0.4:0);
     const fPos=flowGeo.attributes.position.array as Float32Array;
     for(let i=0;i<128;i++){ const b=branches[i%branches.length];
       flowSpeeds[i]+=0.016+0.018; if(flowSpeeds[i]>1) flowSpeeds[i]=0;
@@ -144,7 +141,6 @@ export default function Page(){
     inner.rotation.y-=rot*0.62; inner2.rotation.y+=rot*0.78; satGroup.rotation.z+=rot*0.34;
     const breathe=0.5+Math.sin(t*2)*0.3; glow.scale.setScalar(1.2+breathe*0.3);
     glow2.scale.setScalar(1.0+breathe*0.5);
-    middleMat.emissiveIntensity=8+Math.sin(t*3)*1.5+(ignited?4:0);
     particles.rotation.y+=0.003; composer.render();
   }; animate();
   const onResize=()=>{ camera.aspect=window.innerWidth/window.innerHeight;
@@ -161,7 +157,7 @@ export default function Page(){
     fontSize:12,fontWeight:900,letterSpacing:'0.2em',zIndex:10}}>
     {on?'🔥 NOYAU ALLUMÉ — BOUCLE FERMÉE 99.5%':'⚡ IGNITION DIAMANT Z10.71'}</div>
   <div style={{position:'fixed',bottom:0,left:0,right:0,zIndex:10,padding:12,display:'flex',flexDirection:'column',gap:8}}>
-    <button onClick={()=>{}} style={{padding:16,borderRadius:999,border:0,background:'#fff',color:'#000',fontSize:14,fontWeight:900,letterSpacing:'0.2em'}}>🔥 ALLUMER VRAIMENT LE NOYAU — IGNITION FORCE</button>
+    <button style={{padding:16,borderRadius:999,border:0,background:'#fff',color:'#000',fontSize:14,fontWeight:900,letterSpacing:'0.2em'}}>🔥 ALLUMER VRAIMENT LE NOYAU — IGNITION FORCE</button>
     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
       <button style={{padding:12,borderRadius:999,border:'1px solid rgba(255,255,255,0.2)',background:'rgba(255,255,255,0.1)',color:'#fff',fontSize:11}}>⚡ BOOST 200%</button>
       <button style={{padding:12,borderRadius:999,border:'1px solid rgba(255,255,255,0.2)',background:'rgba(255,255,255,0.1)',color:'#fff',fontSize:11}}>💡 BLOOM x3</button>
