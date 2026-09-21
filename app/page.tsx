@@ -1,4 +1,3 @@
-
 'use client';
 // V19.2.3.11 HALO LUMINEUX - 156P MODULES CLIQUABLES - BUILD SAFE - FIX 404
 // CORE LOCK: 0.62/0.78/0.92 / 0.48 T0.995 IOR2.65 / 0.22/0.11 / ZOOM 5.0-6.2 VALIDÉ
@@ -31,7 +30,7 @@ export default function Page(){
   const inner2=new THREE.Mesh(new THREE.IcosahedronGeometry(0.11,3),new THREE.MeshBasicMaterial({color:0xaaffff,transparent:true,opacity:0.92} as any)); coreGroup.add(inner2);
 
   const diamV='varying vec3 vP; void main(){ vP=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }';
-  const diamF=`varying vec3 vP; uniform float uT; void main(){ float ang=atan(vP.y,vP.x); float r=length(vP.xy); float star=pow(abs(cos(ang*4.0)),12.0)+pow(abs(cos(ang*4.0+0.785)),12.0); float center=1.0-smoothstep(0.0,0.22,length(vP)*3.0); vec3 col=mix(vec3(0.12,0.28,0.52),vec3(0.72,0.92,1.0),cos(ang*8.0)*0.5+0.5); col+=vec3(1.0)*center*1.2+star*0.6; gl_FragColor=vec4(col,0.82); }`;
+  const diamF=`varying vec3 vP; uniform float uT; void main(){ float ang=atan(vP.y,vP.x); float star=pow(abs(cos(ang*4.0)),12.0)+pow(abs(cos(ang*4.0+0.785)),12.0); float center=1.0-smoothstep(0.0,0.22,length(vP)*3.0); vec3 col=mix(vec3(0.12,0.28,0.52),vec3(0.72,0.92,1.0),cos(ang*8.0)*0.5+0.5); col+=vec3(1.0)*center*1.2+star*0.6; gl_FragColor=vec4(col,0.82); }`;
   const diamMat=new THREE.ShaderMaterial({uniforms:{uT:{value:0}},vertexShader:diamV,fragmentShader:diamF,transparent:true});
   const diamHeart=new THREE.Mesh(new THREE.IcosahedronGeometry(0.18,3),diamMat); coreGroup.add(diamHeart);
 
@@ -53,13 +52,4 @@ export default function Page(){
   let haloT=0; let active=-1;
 
   const raycaster=new THREE.Raycaster(); (raycaster.params as any).Points={threshold:0.18}; const mouse=new THREE.Vector2();
-  const onPointer=(e:PointerEvent)=>{ mouse.x=(e.clientX/innerWidth)*2-1; mouse.y=-(e.clientY/innerHeight)*2+1; raycaster.setFromCamera(mouse,camera); const hits=raycaster.intersectObject(particles); if(hits.length>0){ const idx=hits[0].index!; setSel(idx); active=idx; haloT=0; const p=new THREE.Vector3(pos[idx*3],pos[idx*3+1],pos[idx*3+2]); p.applyMatrix4(particles.matrixWorld); haloGroup.position.copy(p); (haloCore.material as any).opacity=1; (haloRing.material as any).opacity=0.85; (haloGlow.material as any).opacity=0.35; haloLight.intensity=85; const m=modules[idx]; setInfo(`HALO ACTIF MODULE ${m.id} • DMX CH${m.dmxCh} • AUDIO ${m.audio}`); const col=geo.attributes.color.array as Float32Array; col[idx*3]=1; col[idx*3+1]=1; col[idx*3+2]=1; geo.attributes.color.needsUpdate=true; if(navigator.vibrate) navigator.vibrate(40); setTimeout(()=>{ col[idx*3]=0.2; col[idx*3+1]=0.85; col[idx*3+2]=1; geo.attributes.color.needsUpdate=true; },500); } };
-  addEventListener('pointerdown',onPointer);
-
-  let ignited=false; const ignite=()=>{ if(ignited) return; ignited=true; setOn(true); bloom.strength=0.62; (renderer as any).toneMappingExposure=0.88; setInfo('NOYAU ALLUMÉ - CLIQUE UNE PARTICULE → HALO'); }; setTimeout(ignite,300);
-  let t=0,raf=0; const animate=()=>{ raf=requestAnimationFrame(animate); t+=0.016; middleMat.uniforms.uT.value=t; (diamMat.uniforms as any).uT.value=t; middleMat.uniforms.uI.value=0.52+Math.sin(t*2.2)*0.06+(ignited?0.1:0); coreGroup.rotation.y+=0.0012; diamHeart.rotation.y-=0.0009; particles.rotation.y+=0.0008; if(active>=0){ haloT+=0.016; const pulse=1+Math.sin(haloT*4)*0.15; haloCore.scale.setScalar(pulse); haloRing.scale.setScalar(pulse*1.2); haloGlow.scale.setScalar(1+Math.sin(haloT*3)*0.3); haloRing.rotation.z+=0.04; const idx=active; const p=new THREE.Vector3(pos[idx*3],pos[idx*3+1],pos[idx*3+2]); p.applyMatrix4(particles.matrixWorld); haloGroup.position.copy(p); } composer.render(); }; animate();
-  const onR=()=>{ const mob=innerWidth<768; camera.aspect=innerWidth/innerHeight; camera.fov=mob?34:32; camera.position.z=mob?6.2:5.0; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); composer.setSize(innerWidth,innerHeight); }; addEventListener('resize',onR);
-  return()=>{ cancelAnimationFrame(raf); removeEventListener('resize',onR); removeEventListener('pointerdown',onPointer); mount.removeChild(renderer.domElement); renderer.dispose(); };
- },[]);
- return(<div style={{width:'100%',height:'100dvh',background:'#000',overflow:'hidden'}}><div ref={ref} style={{position:'fixed',inset:0}}/><div style={{position:'fixed',top:12,left:'50%',transform:'translateX(-50%)',background:on?'#88ffff':'#3dd598',color:'#000',padding:'8px 20px',borderRadius:999,fontSize:11,fontWeight:900,zIndex:10}}>{on?`V19.2.3.11 HALO FIX 404 • ${info}`:'⚡ IGNITION V19.2.3.11'}</div>{sel!==null && <div style={{position:'fixed',bottom:12,left:12,right:12,background:'rgba(0,255,255,0.14)',border:'1px solid #88ffff',padding:'12px',borderRadius:'14px',color:'#fff',fontSize:'10px',fontFamily:'monospace'}}>✨ HALO ACTIF MODULE {sel} • DMX CH{111+sel} • AUDIO {50+Math.floor(sel/1.22)} • GOLDEN {(sel*2.399963).toFixed(3)} • HALO PULSE 4Hz + LIGHT 85</div>}</div>);
-}
+  const onPointer=(e:PointerEvent)=>{ mouse.x=(e.clientX/innerWidth)*2-1; mouse.y=-(e.clientY/innerHeight)*2+1; raycaster.setFromCamera(mouse,camera); const hits=raycaster.intersectObject(particles); if(hits.length>0){ const idx=hits[0].index!; setSel(idx); active=idx; haloT=0; const p=new THREE
