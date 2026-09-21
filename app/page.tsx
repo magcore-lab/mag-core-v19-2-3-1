@@ -1,4 +1,3 @@
-
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
@@ -6,7 +5,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-// V77 QUANTIQUE MATRICIEL CINEMASCOPE 2.39:1 TECHNO-FUTURE - 7 QUBITS ORBITALE PURE - ZOOM 1.469 - NOYAU 90% VIDE - DMX 10CH ARTNET SACN
+// V77 QUANTIQUE MATRICIEL CINEMASCOPE 2.39:1 TECHNO-FUTURE - 7 QUBITS ORBITALE PURE - ZOOM 1.469 - NOYAU 90% VIDE - DMX 10CH ARTNET SACN - FIX BUILD 67
 export default function Page(){
  const ref=useRef<HTMLDivElement>(null);
  const dmxRef=useRef({ch1:127,ch2:85,ch3:165,ch4:128,ch5:100,ch6:80,ch7:120,ch8:90,ch9:70,ch10:210});
@@ -64,12 +63,13 @@ export default function Page(){
   let t=0; let raf=0; const animate=()=>{ raf=requestAnimationFrame(animate); t+=0.016;
     middle.visible=false; inner.visible=false; cubeCamera.position.copy(coreGroup.position); cubeCamera.update(renderer,scene); middle.visible=true; inner.visible=true;
     middleMat.uniforms.uT.value=t; tronPass.uniforms.uT.value=t;
-    const dmx=dmxRef.current; const ch7=dmd=>dmx.ch7/255; const nucleoPower=0.90; const gravStrength=0.0014*nucleoPower*(0.5+ch7*0.8);
+    const dmx=dmxRef.current; const ch7=dmx.ch7/255;
+    const nucleoPower=0.90; const gravStrength=0.0014*nucleoPower*(0.5+ch7*0.8);
     const quantFlicker=Math.sin(t*8.3)*0.12;
     sats.forEach((s:any)=>{
       s.baseAngle+=0.0018+gravStrength*2.8;
       const pulseScale=1.0+Math.sin(t*2.4+s.gravPhase)*0.22+quantFlicker;
-      s.core.scale.setScalar(pulseScale); s.halo.scale.setScalar(1.0+Math.sin(t*1.6+s.gravPhase)*0.26); s.pulse.scale.setScalar(1.0+Math.sin(t*0.9+s.gravPhase)*0.38);
+      s.core.scale.setScalar(pulseScale); s.halo.scale.setScalar(1.0+Math.sin(t*1.4+s.gravPhase)*0.26); s.pulse.scale.setScalar(1.0+Math.sin(t*0.9+s.gravPhase)*0.38);
       s.pulse.material.opacity=0.16+Math.sin(t*1.3+s.gravPhase)*0.08+quantFlicker*0.2; s.light.intensity=48+Math.sin(t*2.2+s.gravPhase)*16+quantFlicker*10;
       const r=s.radius+Math.sin(t*0.7+s.gravPhase)*0.012; const ang=s.baseAngle; const x=Math.cos(ang)*r; const y=Math.sin(ang)*r; const z=0.0;
       s.group.position.set(x,y,z); s.light.position.set(x,y,z);
