@@ -1,100 +1,39 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 export default function Page(){
  const ref=useRef<HTMLDivElement>(null);
- const dmxRef=useRef({ch1:111,ch2:143,ch3:176,ch4:139,ch5:136,ch6:43,ch7:179,ch8:131,ch9:62,ch10:183});
- const dmxTargetRef=useRef({ch1:111,ch2:143,ch3:176,ch4:139,ch5:136,ch6:43,ch7:179,ch8:131,ch9:62,ch10:183});
- const audioRef=useRef({low:0,mid:0,high:0});
+ const cur=useRef({c1:111,c2:143,c3:176,c4:139,c5:136,c6:43,c7:179,c8:131,c9:62,c10:183});
+ const tgt=useRef({c1:111,c2:143,c3:176,c4:139,c5:136,c6:43,c7:179,c8:131,c9:62,c10:183});
  const [on,setOn]=useState(false);
- const [dmxOn,setDmxOn]=useState(false);
- const [mods,setMods]=useState({webgpu:false,audio:false,midi:false,osc:false,artnet:false,sacn:false,dmx:false});
- const [dmxDisplay,setDmxDisplay]=useState({ch1:111,ch2:143,ch3:176,ch4:139,ch5:136,ch6:43,ch7:179,ch8:131,ch9:62,ch10:183});
-
+ const [wsOk,setWsOk]=useState(false);
+ const [mods,setMods]=useState({w:false,a:false,m:false,o:false});
+ const [d,setD]=useState({c1:111,c2:143,c3:176,c8:131,c10:183});
  useEffect(()=>{
-  const mount=ref.current!;
-  const scene=new THREE.Scene();
-  scene.background=new THREE.Color(0x000000);
-  scene.fog=new THREE.FogExp2(0x001419,0.01);
-  const camera=new THREE.PerspectiveCamera(28,window.innerWidth/window.innerHeight,0.1,100);
-  camera.position.set(0,0,10.2);
-  const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
-  renderer.setSize(window.innerWidth,window.innerHeight);
-  renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
-  renderer.toneMapping=THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure=0.72;
-  renderer.outputColorSpace=THREE.SRGBColorSpace;
-  mount.appendChild(renderer.domElement);
-  const composer=new EffectComposer(renderer);
-  composer.addPass(new RenderPass(scene,camera));
-  const bloom=new UnrealBloomPass(new THREE.Vector2(window.innerWidth,window.innerHeight),0.68,0.42,0.68);
-  composer.addPass(bloom);
-
-  let ws:any=null; let retry=0;
-  const connectWS=()=>{
-    try{
-      ws=new WebSocket('ws://localhost:8081');
-      ws.onopen=()=>{ retry=0; setDmxOn(true); setMods(m=>({...m,osc:true,dmx:true,artnet:true,sacn:true})); };
-      ws.onmessage=(e:any)=>{
-        try{
-          const msg=JSON.parse(e.data);
-          if(msg.channels){
-            const c=msg.channels;
-            const cl=(v:number)=>Math.max(0,Math.min(255,Math.floor(v)));
-            dmxTargetRef.current={ch1:cl(c[0]),ch2:cl(c[1]),ch3:cl(c[2]),ch4:cl(c[3]??139),ch5:cl(c[4]??136),ch6:cl(c[5]??43),ch7:cl(c[6]??179),ch8:cl(c[7]??131),ch9:cl(c[8]??62),ch10:cl(c[9])};
-          }
-        }catch{}
-      };
-      ws.onclose=()=>{ setDmxOn(false); setTimeout(connectWS,Math.min(8000,300*Math.pow(2,retry++))); };
-      ws.onerror=()=>{ try{ws.close();}catch{} };
-    }catch{}
-  };
-  connectWS();
-
-  const coreLight=new THREE.PointLight(0x88ffff,124,16); coreLight.decay=2; scene.add(coreLight);
-  const coreLight2=new THREE.PointLight(0xaaffff,68,12); coreLight2.position.set(0,0,1.2); coreLight2.decay=2; scene.add(coreLight2);
-  const innerPoint=new THREE.PointLight(0x88ffff,32,8); innerPoint.decay=2; scene.add(innerPoint);
-
-  const coreGroup=new THREE.Group(); (coreGroup as any).scale.setScalar(1.32); scene.add(coreGroup);
-  const quantumGroup=new THREE.Group(); coreGroup.add(quantumGroup);
-
-  const qGeo=new THREE.BufferGeometry();
-  const qCount=512;
-  const qPos=new Float32Array(qCount*3);
-  for(let i=0;i<qCount;i++){
-    const th=i*2.399963;
-    const ph=Math.acos(1-2*i/qCount);
-    const r=2.0+Math.random()*3.2;
-    qPos[i*3]=Math.sin(ph)*Math.cos(th)*r;
-    qPos[i*3+1]=Math.sin(ph)*Math.sin(th)*r;
-    qPos[i*3+2]=Math.cos(ph)*r;
-  }
-  qGeo.setAttribute('position',new THREE.BufferAttribute(qPos,3));
-  const qMat=new THREE.PointsMaterial({color:0x88ffff,size:0.011,transparent:true,opacity:0.16,sizeAttenuation:true});
-  const qPoints=new THREE.Points(qGeo,qMat);
-  qPoints.frustumCulled=false;
-  quantumGroup.add(qPoints);
-
-  const fresV='varying vec3 vN; varying vec3 vV; varying vec3 vP; void main(){ vN=normalize(normalMatrix*normal); vP=position; vec4 mv=modelViewMatrix*vec4(position,1.0); vV=-mv.xyz; gl_Position=projectionMatrix*mv; }';
-  const fresF='varying vec3 vN; varying vec3 vV; varying vec3 vP; uniform float uT; uniform float uI; uniform float uE; uniform float uInner; uniform float uLow; void main(){ float f=pow(1.0-dot(normalize(vN),normalize(vV)),5.0); float veins=sin(uT*1.2+vP.x*6.0+vP.y*4.0)*0.12 + sin(uT*0.8+vP.z*8.0)*0.08; float heartbeat=sin(uT*2.2)*0.08; float c=0.04+uI*0.22+uInner*0.18+veins+heartbeat+uLow*0.08; float g=f*0.58*uI; vec3 base=vec3(0.38,0.86,0.96)*(c+g); base+=vec3(0.52,0.98,1.0)*uInner*0.22; base*=uE; gl_FragColor=vec4(base,0.18); }';
-  const middleMat=new THREE.ShaderMaterial({uniforms:{uT:{value:0},uI:{value:0.72},uE:{value:0.58},uInner:{value:0.32},uLow:{value:0}},vertexShader:fresV,fragmentShader:fresF,transparent:true,side:THREE.DoubleSide});
-  const middle=new THREE.Mesh(new THREE.SphereGeometry(0.48,64,64),middleMat);
-  coreGroup.add(middle);
-
-  const innerMat=new THREE.MeshPhysicalMaterial({color:0x88ffff,emissive:0x88ffff,emissiveIntensity:1.32,transmission:1.0,thickness:0.12,ior:2.417,dispersion:0.72,roughness:0.0,metalness:0.0,clearcoat:1.0,sheen:0.3,sheenColor:0x88ffff,transparent:true,opacity:0.28} as any);
-  const inner=new THREE.Mesh(new THREE.SphereGeometry(0.22,32,32),innerMat);
-  coreGroup.add(inner);
-
-  const veinGeo=new THREE.BufferGeometry();
-  const veinCount=128;
-  const veinPos=new Float32Array(veinCount*3);
-  for(let i=0;i<veinCount;i++){
-    const a=Math.random()*Math.PI*2;
-    const r=0.22+Math.random()*0.26;
-    veinPos[i*3]=Math.cos(a)*r;
-    veinPos[i*3+1]=Math.sin(a)*r;
-    veinPos
+  const m=ref.current!; const sc=new THREE.Scene(); sc.background=new THREE.Color(0x000000); sc.fog=new THREE.FogExp2(0x001419,0.01);
+  const cam=new THREE.PerspectiveCamera(28,innerWidth/innerHeight,0.1,100); cam.position.set(0,0,10.2);
+  const ren=new THREE.WebGLRenderer({antialias:true}); ren.setSize(innerWidth,innerHeight); ren.setPixelRatio(Math.min(devicePixelRatio,1.5)); ren.toneMapping=THREE.ACESFilmicToneMapping; ren.toneMappingExposure=0.72; ren.outputColorSpace=THREE.SRGBColorSpace; m.appendChild(ren.domElement);
+  const comp=new EffectComposer(ren); comp.addPass(new RenderPass(sc,cam)); const blo=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),0.68,0.42,0.68); comp.addPass(blo);
+  let ws:any=null; let rtry=0;
+  const conn=()=>{ try{ ws=new WebSocket('ws://localhost:8081'); ws.onopen=()=>{rtry=0; setWsOk(true); setMods(s=>({...s,o:true}));}; ws.onmessage=(e:any)=>{ try{ const j=JSON.parse(e.data); if(j.channels){ const c=j.channels; const cl=(v:number)=>Math.max(0,Math.min(255,v|0)); tgt.current={c1:cl(c[0]),c2:cl(c[1]),c3:cl(c[2]),c4:cl(c[3]||139),c5:cl(c[4]||136),c6:cl(c[5]||43),c7:cl(c[6]||179),c8:cl(c[7]||131),c9:cl(c[8]||62),c10:cl(c[9])}; } }catch{} }; ws.onclose=()=>{ setWsOk(false); setTimeout(conn,Math.min(8000,300*Math.pow(2,rtry++))); }; }catch{} }; conn();
+  const cl=new THREE.PointLight(0x88ffff,124,16); cl.decay=2; sc.add(cl); const cl2=new THREE.PointLight(0xaaffff,68,12); cl2.position.set(0,0,1.2); sc.add(cl2); const ip=new THREE.PointLight(0x88ffff,32,8); sc.add(ip);
+  const g=new THREE.Group(); (g as any).scale.setScalar(1.32); sc.add(g); const qg=new THREE.Group(); g.add(qg);
+  const qGe=new THREE.BufferGeometry(); const qC=512; const qP=new Float32Array(qC*3); for(let i=0;i<qC;i++){ const th=i*2.399963, ph=Math.acos(1-2*i/qC), rr=2+Math.random()*3.2; qP[i*3]=Math.sin(ph)*Math.cos(th)*rr; qP[i*3+1]=Math.sin(ph)*Math.sin(th)*rr; qP[i*3+2]=Math.cos(ph)*rr; } qGe.setAttribute('position',new THREE.BufferAttribute(qP,3)); const qM=new THREE.PointsMaterial({color:0x88ffff,size:0.011,transparent:true,opacity:0.16}); const qPts=new THREE.Points(qGe,qM); qPts.frustumCulled=false; qg.add(qPts);
+  const vV='varying vec3 vN,vV,vP;void main(){vN=normalize(normalMatrix*normal);vP=position;vec4 mv=modelViewMatrix*vec4(position,1.0);vV=-mv.xyz;gl_Position=projectionMatrix*mv;}';
+  const fV='varying vec3 vN,vV,vP;uniform float uT,uI,uE,uN,uL;void main(){float f=pow(1.0-dot(normalize(vN),normalize(vV)),5.0);float veins=sin(uT*1.2+vP.x*6.0)*0.12+sin(uT*0.8+vP.z*8.0)*0.08;float hb=sin(uT*2.2)*0.08;float c=0.04+uI*0.22+uN*0.18+veins+hb+uL*0.08;float gg=f*0.58*uI;vec3 b=vec3(0.38,0.86,0.96)*(c+gg)+vec3(0.52,0.98,1.0)*uN*0.22;b*=uE;gl_FragColor=vec4(b,0.18);}';
+  const mM=new THREE.ShaderMaterial({uniforms:{uT:{value:0},uI:{value:0.72},uE:{value:0.58},uN:{value:0.32},uL:{value:0}},vertexShader:vV,fragmentShader:fV,transparent:true,side:THREE.DoubleSide}); const mid=new THREE.Mesh(new THREE.SphereGeometry(0.48,64,64),mM); g.add(mid);
+  const iM=new THREE.MeshPhysicalMaterial({color:0x88ffff,emissive:0x88ffff,emissiveIntensity:1.32,transmission:1,thickness:0.12,ior:2.417,dispersion:0.72,transparent:true,opacity:0.28} as any); const inn=new THREE.Mesh(new THREE.SphereGeometry(0.22,32,32),iM); g.add(inn);
+  const vG=new THREE.BufferGeometry(); const vC=128; const vP=new Float32Array(vC*3); for(let i=0;i<vC;i++){ const a=Math.random()*6.28, rr=0.22+Math.random()*0.26; vP[i*3]=Math.cos(a)*rr; vP[i*3+1]=Math.sin(a)*rr; vP[i*3+2]=(Math.random()-0.5)*0.2; } vG.setAttribute('position',new THREE.BufferAttribute(vP,3)); const vMt=new THREE.PointsMaterial({color:0xaaffff,size:0.018,transparent:true,opacity:0.32}); const vPts=new THREE.Points(vG,vMt); g.add(vPts);
+  const glM=new THREE.MeshPhysicalMaterial({color:0x88ffff,emissive:0x88ffff,emissiveIntensity:0.42,transparent:true,opacity:0.08} as any); const glo=new THREE.Mesh(new THREE.SphereGeometry(0.52,32,32),glM); g.add(glo);
+  const igM=new THREE.MeshPhysicalMaterial({color:0xaaffff,emissive:0xaaffff,emissiveIntensity:0.68,transparent:true,opacity:0.14} as any); const igl=new THREE.Mesh(new THREE.SphereGeometry(0.28,32,32),igM); g.add(igl);
+  let ign=false; const ignite=()=>{ if(ign) return; ign=true; setOn(true); blo.strength=0.68; mM.uniforms.uE.value=0.58; mM.uniforms.uN.value=0.32; iM.emissiveIntensity=1.32; cl.intensity=124; cl2.intensity=68; ip.intensity=32; ren.toneMappingExposure=0.72; }; setTimeout(ignite,50); addEventListener('pointerdown',ignite,{once:true});
+  let t=0, raf=0; const fS=new Float32Array(vC).map(()=>Math.random()); const qL=(a:number,b:number,al:number)=>a+(b-a)*al;
+  const anim=()=>{ raf=requestAnimationFrame(anim); t+=0.016; const tg=tgt.current, cr=cur.current, al=0.08; cr.c1=qL(cr.c1,tg.c1,al); cr.c2=qL(cr.c2,tg.c2,al); cr.c3=qL(cr.c3,tg.c3,al); cr.c8=qL(cr.c8,tg.c8,al); cr.c10=qL(cr.c10,tg.c10,al*0.5); if(!ws||ws.readyState!==1){ const tt=t; tgt.current={c1:111+Math.sin(tt*0.6)*18,c2:143+Math.sin(tt*0.4)*14,c3:176+Math.sin(tt*0.8)*10,c4:139,c5:136,c6:43,c7:179,c8:131+Math.sin(tt*0.4)*12,c9:62,c10:183+Math.sin(tt*0.2)*8}; } if((t*4|0)%4===0) setD({c1:cr.c1|0,c2:cr.c2|0,c3:cr.c3|0,c8:cr.c8|0,c10:cr.c10|0}); const ma=cr.c10/255, pr=cr.c1/255, bl=cr.c2/255, fl=cr.c3/255, innC=cr.c8/255; mM.uniforms.uT.value=t; mM.uniforms.uI.value=0.72+Math.sin(t*2.2)*0.06+pr*0.1; mM.uniforms.uN.value=0.32+innC*0.28+Math.sin(t*1.2)*0.06; blo.strength=0.68+bl*0.14; ren.toneMappingExposure=0.72*ma+0.22; iM.emissiveIntensity=1.32+innC*0.32+Math.sin(t*1.2)*0.08; cl.intensity=124*ma+innC*16+Math.sin(t*2.2)*6; const hb=1+Math.sin(t*2.2)*0.08; const rot=0.0004*(0.5+pr); g.rotation.y+=rot; mid.rotation.y+=rot*0.32; inn.rotation.y-=rot*0.42; qg.rotation.y+=0.0003+fl*0.0004; vPts.rotation.y+=0.001+fl*0.0008; const vPos=vG.attributes.position.array as Float32Array; for(let i=0;i<vC;i++){ fS[i]+=0.016+fl*0.012; if(fS[i]>6.28) fS[i]=0; vPos[i*3+2]=Math.sin(fS[i]+i*0.1)*0.12; } vG.attributes.position.needsUpdate=true; inn.scale.setScalar((1.08+innC*0.06+Math.sin(t*2.2)*0.04)*hb); glo.scale.setScalar(1.32+innC*0.06); igl.scale.setScalar(1.18+innC*0.08); comp.render(); }; anim();
+  const onR=()=>{ cam.aspect=innerWidth/innerHeight; cam.updateProjectionMatrix(); ren.setSize(innerWidth,innerHeight); comp.setSize(innerWidth,innerHeight); }; addEventListener('resize',onR);
+  return()=>{ cancelAnimationFrame(raf); removeEventListener('resize',onR); try{m.removeChild(ren.domElement);}catch{}; ren.dispose(); if(ws) ws.close(); };
+ },[]);
+ return(<div style={{width:'100%',height:'100dvh',background:'#000',overflow:'hidden'}}><div ref={ref} style={{position:'fixed',inset:0}}/><div style={{position:'fixed',top:12,left:'50%',transform:'translateX(-50%)',background:on?(wsOk?'#88ffff':'#ffaa00'):'#3dd598',color:'#000',padding:'8px 20px',borderRadius:999,fontSize:11,fontWeight:900,zIndex:10}}>{on?`V111 LIVING 1.32 Q 0.08 VEINS 128 ${wsOk?'WS OK':'SYNTH'}`:'IGNITION V111'}</div><div style={{position:'fixed',bottom:12,left:12,right:12,display:'flex',justifyContent:'center',gap:6,background:'rgba(0,0,0,0.85)',padding:10,borderRadius:16,border:'1px solid rgba(136,255,255,0.2)',zIndex:10}}>{Object.entries(d).map(([k,v])=><div key={k} style={{background:'#111',color:'#88ffff',padding:'6px 10px',borderRadius:12,fontSize:9,fontWeight:900}}>{k}:{v as number}</div>)}</div></div>);
+}
