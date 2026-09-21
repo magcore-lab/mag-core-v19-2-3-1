@@ -1,5 +1,5 @@
 'use client';
-// V19.2.3.23 FIX FINAL - 0 PLANETE GRISE - NOYAU 15% ROND DIAMANT VRAI - SUPER PROD
+// V19.2.3.24 DEBLOQUE BUILD VERCEL - 0 BRANCHE - NOYAU 15% ROND DIAMANT - SUPER PROD
 import { useEffect,useRef,useState } from 'react';
 import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -17,21 +17,17 @@ export default function Page(){
   const comp=new EffectComposer(ren); comp.addPass(new RenderPass(sc,cam)); const bloom=new (UnrealBloomPass as any)(new THREE.Vector2(innerWidth,innerHeight),0.42,0.35,0.78); comp.addPass(bloom);
   let ws:any=null; try{ ws=new WebSocket('ws://localhost:8081'); ws.onopen=()=>setDmxOn(true); ws.onmessage=(e:any)=>{ try{ const j=JSON.parse(e.data); if(j.channels){ const c=j.channels; const cl=(v:number)=>Math.max(0,Math.min(255,Math.floor(v))); dmxRef.current={ch1:cl(c[0]),ch2:cl(c[1]),ch3:cl(c[2]),ch10:cl(c[9])}; } }catch{} }; }catch{}
   sc.add(new THREE.AmbientLight(0xffffff,0.62));
-  const coreLight=new THREE.PointLight(0x88ffff,24,6); sc.add(coreLight);
   const cg=new THREE.Group(); sc.add(cg);
-  // NOYAU 15% ROND DIAMANT - 2 SPHERES SEULEMENT - PAS DE GROSSE PLANETE
-  const coreMat=new (THREE as any).MeshPhysicalMaterial({color:0x88ffff,emissive:0x88ffff,emissiveIntensity:0.15,transmission:0.998,thickness:0.52,ior:2.417,dispersion:0.42,roughness:0.03,clearcoat:1.0,transparent:true,opacity:0.32} as any);
+  // NOYAU 15% - 0 PLANETE GRISE - 2 SPHERES SEULEMENT
+  const coreMat=new (THREE as any).MeshPhysicalMaterial({color:0x88ffff,emissive:0x88ffff,emissiveIntensity:0.15,transmission:0.998,thickness:0.52,ior:2.417,dispersion:0.42,roughness:0.03,clearcoat:1.0,transparent:true,opacity:0.32});
   const core=new THREE.Mesh(new THREE.SphereGeometry(0.22,48,48),coreMat); cg.add(core);
-  const dot=new THREE.Mesh(new THREE.SphereGeometry(0.07,24,24),new (THREE as any).MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.85} as any)); cg.add(dot);
-  const glow=new THREE.Mesh(new THREE.SphereGeometry(0.34,24,24),new (THREE as any).MeshBasicMaterial({color:0x88ffff,transparent:true,opacity:0.04} as any)); cg.add(glow);
-  // 256P FOND
-  const p2Geo=new THREE.BufferGeometry(); const p2Pos=new Float32Array(256*3); for(let i=0;i<256;i++){ const th=i*2.399963; const ph=Math.acos(1-2*i/256); const r=2.2+Math.random()*2.8; p2Pos[i*3]=Math.sin(ph)*Math.cos(th)*r; p2Pos[i*3+1]=Math.sin(ph)*Math.sin(th)*r; p2Pos[i*3+2]=Math.cos(ph)*r; } p2Geo.setAttribute('position',new THREE.BufferAttribute(p2Pos,3)); sc.add(new THREE.Points(p2Geo,new (THREE as any).PointsMaterial({color:0xffffff,size:0.008,transparent:true,opacity:0.18} as any)));
-  // 156P RONDES - BIEN VISIBLES
+  const dot=new THREE.Mesh(new THREE.SphereGeometry(0.07,24,24),new (THREE as any).MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.85})); cg.add(dot);
+  const glow=new THREE.Mesh(new THREE.SphereGeometry(0.34,24,24),new (THREE as any).MeshBasicMaterial({color:0x88ffff,transparent:true,opacity:0.04})); cg.add(glow);
+  const p2Geo=new THREE.BufferGeometry(); const p2Pos=new Float32Array(256*3); for(let i=0;i<256;i++){ const th=i*2.399963; const ph=Math.acos(1-2*i/256); const r=2.2+Math.random()*2.8; p2Pos[i*3]=Math.sin(ph)*Math.cos(th)*r; p2Pos[i*3+1]=Math.sin(ph)*Math.sin(th)*r; p2Pos[i*3+2]=Math.cos(ph)*r; } p2Geo.setAttribute('position',new THREE.BufferAttribute(p2Pos,3)); sc.add(new THREE.Points(p2Geo,new (THREE as any).PointsMaterial({color:0xffffff,size:0.008,transparent:true,opacity:0.18})));
   const geo=new THREE.BufferGeometry(); const pos=new Float32Array(156*3); const sz=new Float32Array(156); for(let i=0;i<156;i++){ const th=i*2.399963; const ph=Math.acos(1-2*i/156); const r=1.45+Math.random()*0.5; pos[i*3]=Math.sin(ph)*Math.cos(th)*r; pos[i*3+1]=Math.sin(ph)*Math.sin(th)*r; pos[i*3+2]=Math.cos(ph)*r; sz[i]=0.06+Math.random()*0.02; } geo.setAttribute('position',new THREE.BufferAttribute(pos,3)); geo.setAttribute('size',new THREE.BufferAttribute(sz,1));
   const pV='attribute float size; void main(){ vec4 mv=modelViewMatrix*vec4(position,1.0); gl_PointSize=size* (380.0 / -mv.z); gl_Position=projectionMatrix*mv;}';
   const pF='void main(){ float d=distance(gl_PointCoord,vec2(0.5)); if(d>0.5) discard; float a=1.0-smoothstep(0.2,0.5,d); gl_FragColor=vec4(vec3(0.2,0.82,1.0),a*0.82);}';
   const pMat=new (THREE as any).ShaderMaterial({vertexShader:pV,fragmentShader:pF,transparent:true}); const pts=new THREE.Points(geo,pMat); sc.add(pts);
-  // SELECT ROND
   const hg=new THREE.Group(); sc.add(hg);
   const hc=new THREE.Mesh(new THREE.SphereGeometry(0.045,20,20),new (THREE as any).MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0})); hg.add(hc);
   const hr=new THREE.Mesh(new THREE.RingGeometry(0.07,0.12,40),new (THREE as any).MeshBasicMaterial({color:0x88ffff,transparent:true,opacity:0,side:THREE.DoubleSide})); hg.add(hr);
@@ -50,9 +46,8 @@ export default function Page(){
   <div style={{width:'100%',height:'100dvh',background:'#000',overflow:'hidden'}}>
    <div ref={ref} style={{position:'fixed',inset:0}}/>
    <div style={{position:'fixed',top:12,left:'50%',transform:'translateX(-50%)',background:on?(dmxOn?'#88ffff':'#3dd598'):'#3dd598',color:'#000',padding:'8px 20px',borderRadius:999,fontSize:11,fontWeight:900,zIndex:10}}>
-    {on?`V19.2.3.23 FIX PLANETE • NOYAU 15% ROND • 0 BRANCHE • M${sel??'-'}`:'⚡ IGNITION FIX'}
+    {on?`V19.2.3.24 DEBLOQUE • NOYAU 15% ROND • 0 BRANCHE • M${sel??'-'}`:'⚡ IGNITION DEBLOQUE'}
    </div>
-   {sel!==null && <div style={{position:'fixed',bottom:12,left:12,right:12,background:'rgba(0,255,255,0.08)',border:'1px solid rgba(136,255,255,0.32)',padding:10,borderRadius:12,color:'#fff',fontSize:10,fontFamily:'monospace',zIndex:10}}>✨ MODULE {sel} CH{111+sel} • NOYAU 15% ROND • 0 PLANETE GRISE</div>}
   </div>
  );
 }
