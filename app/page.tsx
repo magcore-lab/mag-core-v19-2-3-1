@@ -5,7 +5,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-// V78 FIX COMPLET - SAT -10% SANS REFLET CAMERA ELECTRISATION BLEUTE DIAMANT GRAVITATION PURE XY 1.469 90% VIDE
+// V79 SAT RAPPROCHES DU NOYAU 0.88->0.62 + ZOOM +10% 1.469->1.616 + SAT -10% SANS REFLET ELECTRISATION BLEUTE DIAMANT
 export default function Page(){
  const ref=useRef<HTMLDivElement>(null);
  const dmxRef=useRef({ch1:127,ch2:85,ch3:165,ch4:128,ch5:100,ch6:80,ch7:120,ch8:90,ch9:70,ch10:210});
@@ -13,8 +13,7 @@ export default function Page(){
  const [dmxOn,setDmxOn]=useState(false);
  const [mods,setMods]=useState({webgpu:false,audio:false,midi:false,osc:false,artnet:false,sacn:false,dmx:false});
  useEffect(()=>{
-  const mount=ref.current!;
-  const scene=new THREE.Scene(); scene.background=new THREE.Color(0x000000);
+  const mount=ref.current!; const scene=new THREE.Scene(); scene.background=new THREE.Color(0x000000);
   const camera=new THREE.PerspectiveCamera(28,window.innerWidth/window.innerHeight,0.1,100); camera.position.set(0,0,10.2);
   const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
   renderer.setSize(window.innerWidth,window.innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio,1.25));
@@ -33,11 +32,11 @@ export default function Page(){
   const key=new THREE.PointLight(0xffffff,82,50); key.position.set(4,4,5); scene.add(key);
   const coreLight=new THREE.PointLight(0x88ccff,46,9); scene.add(coreLight);
   const coreLight2=new THREE.PointLight(0xaaffff,36,7); coreLight2.position.set(0,0,1.6); scene.add(coreLight2);
-  const coreGroup=new THREE.Group(); (coreGroup as any).scale.setScalar(1.46942); scene.add(coreGroup);
+  const coreGroup=new THREE.Group(); (coreGroup as any).scale.setScalar(1.61636); scene.add(coreGroup);
   const satGroup=new THREE.Group(); coreGroup.add(satGroup);
   const quantGroup=new THREE.Group(); coreGroup.add(quantGroup);
   const electrGroup=new THREE.Group(); coreGroup.add(electrGroup);
-  const SAT_COUNT=7; const RADIUS=0.88;
+  const SAT_COUNT=7; const RADIUS=0.62;
   const diamV='varying vec3 vN; varying vec3 vV; void main(){ vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.0); vV=-mv.xyz; gl_Position=projectionMatrix*mv; }';
   const diamF='varying vec3 vN; varying vec3 vV; uniform float uT; uniform float uE; uniform float uPower; void main(){ float f=pow(1.0-dot(normalize(vN),normalize(vV)),2.9); float c=0.52+f*0.22; vec3 base=vec3(0.62,0.82,0.94); base*=uE*uPower; gl_FragColor=vec4(base*c,0.54); }';
   const middleMat=new THREE.ShaderMaterial({uniforms:{uT:{value:0},uE:{value:0.68},uPower:{value:0.90}},vertexShader:diamV,fragmentShader:diamF,transparent:true,side:THREE.DoubleSide} as any);
@@ -53,7 +52,7 @@ export default function Page(){
     const p=new THREE.Mesh(new THREE.SphereGeometry(0.082,14,14),new THREE.MeshBasicMaterial({color:0x88ffff,transparent:true,opacity:0.12} as any));
     g.add(c); g.add(h); g.add(p);
     g.position.set(Math.cos(ang)*RADIUS,Math.sin(ang)*RADIUS,0); satGroup.add(g);
-    const l=new THREE.PointLight(0x88ffff,43.2,3.6); l.position.copy(g.position); satGroup.add(l);
+    const l=new THREE.PointLight(0x88ffff,43.2,3.2); l.position.copy(g.position); satGroup.add(l);
     sats.push({group:g,core:c,halo:h,pulse:p,light:l,baseAngle:ang,radius:RADIUS,gravPhase:Math.random()*6.28318});
   }
   for(let i=0;i<SAT_COUNT;i++){
@@ -74,19 +73,19 @@ export default function Page(){
     raf=requestAnimationFrame(animate); t+=0.016;
     middleMat.uniforms.uT.value=t; tronPass.uniforms.uT.value=t;
     const dmx=dmxRef.current; const ch7=dmx.ch7/255;
-    const nucleoPower=0.90; const gravStrength=0.0014*nucleoPower*(0.5+ch7*0.8);
+    const nucleoPower=0.90; const gravStrength=0.0016*nucleoPower*(0.5+ch7*0.8);
     const quantFlicker=Math.sin(t*8.3)*0.10;
     sats.forEach((s:any)=>{
       s.baseAngle+=0.0018+gravStrength*2.8;
       const ps=1.0+Math.sin(t*2.4+s.gravPhase)*0.20+quantFlicker;
       s.core.scale.setScalar(ps); s.halo.scale.setScalar(1.0+Math.sin(t*1.4+s.gravPhase)*0.22); s.pulse.scale.setScalar(1.0+Math.sin(t*0.9+s.gravPhase)*0.34);
       s.pulse.material.opacity=0.12+Math.sin(t*1.3+s.gravPhase)*0.06+quantFlicker*0.16; s.light.intensity=43.2+Math.sin(t*2.2+s.gravPhase)*12+quantFlicker*8;
-      const r=s.radius+Math.sin(t*0.7+s.gravPhase)*0.010; const ang=s.baseAngle; const x=Math.cos(ang)*r; const y=Math.sin(ang)*r;
+      const r=s.radius+Math.sin(t*0.7+s.gravPhase)*0.008; const ang=s.baseAngle; const x=Math.cos(ang)*r; const y=Math.sin(ang)*r;
       s.group.position.set(x,y,0); s.light.position.set(x,y,0);
     });
     quantLines.forEach((q:any)=>{
       const a=sats[q.i].group.position; const b=sats[q.j].group.position;
-      q.line.geometry.setFromPoints([a,b]); const d=a.distanceTo(b); const op=ch7*0.16*(1.0-d/2.0); q.mat.opacity=Math.max(0,op+quantFlicker*0.06);
+      q.line.geometry.setFromPoints([a,b]); const d=a.distanceTo(b); const op=ch7*0.16*(1.0-d/1.4); q.mat.opacity=Math.max(0,op+quantFlicker*0.06);
     });
     electrLines.forEach((e:any)=>{
       const flick=0.18+Math.sin(t*12.7+e.phase)*0.12+Math.sin(t*5.3)*0.06;
@@ -99,5 +98,5 @@ export default function Page(){
   const onResize=()=>{ camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth,window.innerHeight); composer.setSize(window.innerWidth,window.innerHeight); }; window.addEventListener('resize',onResize);
   return()=>{ cancelAnimationFrame(raf); window.removeEventListener('resize',onResize); mount.removeChild(renderer.domElement); renderer.dispose(); if(ws) ws.close(); };
  },[]);
- return(<div style={{width:'100%',height:'100dvh',background:'#000',overflow:'hidden',touchAction:'none'}}><div ref={ref} style={{position:'fixed',inset:0}}/><div style={{position:'fixed',top:12,left:'50%',transform:'translateX(-50%)',background:on?'#88ffff':'#3dd598',color:'#000',padding:'8px 20px',borderRadius:999,fontSize:11,fontWeight:900,letterSpacing:'0.15em',zIndex:10}}>{on?`V78 FIX SAT -10% SANS REFLET ELECTRISATION ${dmxOn?'DMX WS':'DMX SYNTH'} ${Object.values(mods).filter(Boolean).length}/7 MODS`:'IGNITION V78 FIX'}</div><div style={{position:'fixed',bottom:0,left:0,right:0,zIndex:10,padding:12}}><button style={{padding:14,borderRadius:999,border:0,background:'#fff',color:'#000',fontSize:10,fontWeight:900,letterSpacing:'0.10em'}}>V78 FIX SAT -10% SANS REFLET CAMERA ELECTRISATION BRANCHE BLEUTE DIAMANT 1.469 90% VIDE</button></div></div>);
+ return(<div style={{width:'100%',height:'100dvh',background:'#000',overflow:'hidden',touchAction:'none'}}><div ref={ref} style={{position:'fixed',inset:0}}/><div style={{position:'fixed',top:12,left:'50%',transform:'translateX(-50%)',background:on?'#88ffff':'#3dd598',color:'#000',padding:'8px 20px',borderRadius:999,fontSize:11,fontWeight:900,letterSpacing:'0.15em',zIndex:10}}>{on?`V79 SAT RAPPROCHES 0.62 ZOOM +10% 1.616 ${dmxOn?'DMX WS':'DMX SYNTH'} ${Object.values(mods).filter(Boolean).length}/7 MODS`:'IGNITION V79 RAPPROCHES +10%'}</div><div style={{position:'fixed',bottom:0,left:0,right:0,zIndex:10,padding:12}}><button style={{padding:14,borderRadius:999,border:0,background:'#fff',color:'#000',fontSize:10,fontWeight:900,letterSpacing:'0.10em'}}>V79 SAT RAPPROCHES DU NOYAU 0.62 ZOOM +10% 1.616 SANS REFLET ELECTRISATION BLEUTE</button></div></div>);
 }
