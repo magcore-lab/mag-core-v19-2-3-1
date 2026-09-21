@@ -1,4 +1,3 @@
-
 'use client';
 /**
  * MAG CORE V19.2.3.9 - PARTICULE = MODULE FONCTIONNEL - BUILD FIX
