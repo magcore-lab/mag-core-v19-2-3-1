@@ -1,10 +1,11 @@
+
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-// V96 0 ANNEAU + DEZOOM NOYAU 10% 1.536->1.3824 + DMX PRESENTATION + ALLUMAGE QUANTIQUE 1.35
+// V97 DEZOOM 20% 1.3824->1.1059 RESPIRE + 1 SEUL HALO 0.36 SUPPRESSION 2EME HALO 0.58 + ALLUMAGE QUANTIQUE 1.35
 export default function Page(){
  const ref=useRef<HTMLDivElement>(null);
  const dmxRef=useRef({ch1:127,ch2:85,ch3:165,ch4:128,ch5:140,ch6:80,ch7:160,ch8:90,ch9:70,ch10:210});
@@ -66,7 +67,7 @@ export default function Page(){
   scene.add(new THREE.AmbientLight(0x88ccff,0.22));
   const coreLight=new THREE.PointLight(0x88ffff,112,10); scene.add(coreLight);
   const coreLight2=new THREE.PointLight(0xaaffff,72,7); coreLight2.position.set(0,0,1.8); scene.add(coreLight2);
-  const coreGroup=new THREE.Group(); (coreGroup as any).scale.setScalar(1.3824); scene.add(coreGroup);
+  const coreGroup=new THREE.Group(); (coreGroup as any).scale.setScalar(1.1059); scene.add(coreGroup);
   const quantumGroup=new THREE.Group(); coreGroup.add(quantumGroup);
   const qGeo=new THREE.BufferGeometry(); const qCount=512; const qPos=new Float32Array(qCount*3);
   for(let i=0;i<qCount;i++){ const th=i*2.399963; const ph=Math.acos(1-2*i/qCount); const r=1.8+Math.random()*2.4; qPos[i*3]=Math.sin(ph)*Math.cos(th)*r; qPos[i*3+1]=Math.sin(ph)*Math.sin(th)*r; qPos[i*3+2]=Math.cos(ph)*r; }
@@ -79,8 +80,7 @@ export default function Page(){
   const innerMat=new THREE.MeshPhysicalMaterial({color:0x88ffff,emissive:0x88ffff,emissiveIntensity:1.35,transmission:0.96,thickness:0.62,ior:2.417,dispersion:0.35,roughness:0.04,clearcoat:1.0,transparent:true,opacity:0.92} as any);
   const inner=new THREE.Mesh(new THREE.SphereGeometry(0.22,32,32),innerMat); coreGroup.add(inner);
   const glow=new THREE.Mesh(new THREE.SphereGeometry(0.36,32,32),new THREE.MeshBasicMaterial({color:0x88ffff,transparent:true,opacity:0.22} as any)); coreGroup.add(glow);
-  const glow2=new THREE.Mesh(new THREE.SphereGeometry(0.58,32,32),new THREE.MeshBasicMaterial({color:0x22aaff,transparent:true,opacity:0.12} as any)); coreGroup.add(glow2);
-  let ignited=false; const ignite=()=>{ if(ignited) return; ignited=true; setOn(true); bloom.strength=0.78; middleMat.uniforms.uE.value=1.12; innerMat.emissiveIntensity=1.35; inner.scale.setScalar(1.12); glow.scale.setScalar(1.42); glow2.scale.setScalar(1.28); coreLight.intensity=112; coreLight2.intensity=72; renderer.toneMappingExposure=0.96; }; setTimeout(ignite,200); window.addEventListener('pointerdown',ignite,{once:true}); window.addEventListener('touchstart',ignite,{once:true});
+  let ignited=false; const ignite=()=>{ if(ignited) return; ignited=true; setOn(true); bloom.strength=0.78; middleMat.uniforms.uE.value=1.12; innerMat.emissiveIntensity=1.35; inner.scale.setScalar(1.12); glow.scale.setScalar(1.42); coreLight.intensity=112; coreLight2.intensity=72; renderer.toneMappingExposure=0.96; }; setTimeout(ignite,200); window.addEventListener('pointerdown',ignite,{once:true}); window.addEventListener('touchstart',ignite,{once:true});
   let t=0; let raf=0;
   const animate=()=>{
     raf=requestAnimationFrame(animate); t+=0.016;
@@ -91,13 +91,13 @@ export default function Page(){
       dmxRef.current=upd; if(Math.floor(tt*4)%4===0) setDmxDisplay(upd);
     }
     const dmx=dmxRef.current; const master=dmx.ch10/255; const prop=dmx.ch1/255; const bloomCH=dmx.ch2/255; const flowCH=dmx.ch3/255; const rgbCH=dmx.ch4/255; const partCH=dmx.ch5/255; const innerCH=dmx.ch8/255;
-    const {low,mid,high}=audioRef.current;
+    const {low,high}=audioRef.current;
     middleMat.uniforms.uT.value=t; middleMat.uniforms.uLow.value=low*0.5+partCH*0.5; middleMat.uniforms.uHue.value=rgbCH; middleMat.uniforms.uI.value=0.92+Math.sin(t*2.2)*0.14+low*0.22+prop*0.24; middleMat.uniforms.uBloom.value=bloomCH;
     bloom.strength=0.78+bloomCH*0.48+low*0.22; renderer.toneMappingExposure=0.96*master+0.42; innerMat.emissiveIntensity=1.35+innerCH*0.58+Math.sin(t*1.4)*0.12+low*0.24;
     coreLight.intensity=112*master+low*22+prop*18; coreLight2.intensity=72*master+low*14;
     const rot=0.0014*(0.5+prop); coreGroup.rotation.y+=rot; middle.rotation.y+=rot*0.52; inner.rotation.y-=rot*0.62; quantumGroup.rotation.y+=0.0008+flowCH*0.0016;
     qPoints.rotation.y+=0.0008+flowCH*0.001; qMat.opacity=0.42*master+partCH*0.26; qMat.size=0.018+high*0.014+partCH*0.010;
-    inner.scale.setScalar(1.12+low*0.16+innerCH*0.12+Math.sin(t*1.8)*0.06); glow.scale.setScalar(1.42+low*0.22); glow2.scale.setScalar(1.28+low*0.16);
+    inner.scale.setScalar(1.12+low*0.16+innerCH*0.12+Math.sin(t*1.8)*0.06); glow.scale.setScalar(1.42+low*0.22);
     composer.render();
   }; animate();
   const onResize=()=>{ camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth,window.innerHeight); composer.setSize(window.innerWidth,window.innerHeight); }; window.addEventListener('resize',onResize);
@@ -115,5 +115,5 @@ export default function Page(){
   {ch:'CH9',name:'PYR',val:dmxDisplay.ch9,color:'#ff88aa'},
   {ch:'CH10',name:'MASTER',val:dmxDisplay.ch10,color:'#ffffff'},
  ];
- return(<div style={{width:'100%',height:'100dvh',background:'#000',overflow:'hidden',touchAction:'none'}}><div ref={ref} style={{position:'fixed',inset:0}}/><div style={{position:'fixed',top:12,left:'50%',transform:'translateX(-50%)',background:on? (dmxOn?'#88ffff':'#ffaa00') :'#3dd598',color:'#000',padding:'8px 20px',borderRadius:999,fontSize:11,fontWeight:900,letterSpacing:'0.12em',zIndex:10,boxShadow:'0 0 20px rgba(136,255,255,0.4)'}}>{on?`V96 0 ANNEAU DEZOOM 10% 1.3824 DMX PRESENTATION ${dmxOn?'WS OK':'SYNTH'} ${Object.values(mods).filter(Boolean).length}/7 MODS ALLUMAGE 1.35`:'IGNITION V96'}</div><div style={{position:'fixed',bottom:12,left:12,right:12,zIndex:10,display:'flex',flexDirection:'column',gap:8}}><div style={{display:'flex',gap:6,flexWrap:'wrap',justifyContent:'center',background:'rgba(0,0,0,0.8)',padding:10,borderRadius:16,border:'1px solid rgba(136,255,255,0.2)'}}>{dmxMap.map(d=><div key={d.ch} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,background:d.ch==='CH10'?'#fff':'rgba(17,17,17,0.9)',color:d.ch==='CH10'?'#000':d.color,padding:'6px 10px',borderRadius:12,fontSize:9,fontWeight:900,border:`1px solid ${d.color}40`,minWidth:62}}><span style={{fontSize:8,opacity:0.7}}>{d.ch}</span><span style={{fontSize:8}}>{d.name}</span><span style={{fontSize:11}}>{d.val}</span><div style={{width:40,height:3,background:'#333',borderRadius:999,overflow:'hidden'}}><div style={{width:`${(d.val/255)*100}%`,height:'100%',background:d.color,transition:'width 0.2s'}} /></div></div>)}</div><button style={{padding:12,borderRadius:999,border:'1px solid rgba(136,255,255,0.3)',background:dmxOn?'#88ffff':'#ffaa00',color:'#000',fontSize:10,fontWeight:900,letterSpacing:'0.10em',boxShadow:'0 0 20px rgba(136,255,255,0.3)'}}>💎 V96 0 ANNEAU DEZOOM 10% 1.3824 + DMX PRESENTATION 10CH ART-NET 6454 sACN 5568 WS 8081 + ALLUMAGE QUANTIQUE 1.35 + QUANTUM 512</button></div></div>);
+ return(<div style={{width:'100%',height:'100dvh',background:'#000',overflow:'hidden',touchAction:'none'}}><div ref={ref} style={{position:'fixed',inset:0}}/><div style={{position:'fixed',top:12,left:'50%',transform:'translateX(-50%)',background:on? (dmxOn?'#88ffff':'#ffaa00') :'#3dd598',color:'#000',padding:'8px 20px',borderRadius:999,fontSize:11,fontWeight:900,letterSpacing:'0.12em',zIndex:10,boxShadow:'0 0 20px rgba(136,255,255,0.4)'}}>{on?`V97 DEZOOM 20% 1.1059 1 HALO ALLUMAGE 1.35 DMX ${dmxOn?'WS OK':'SYNTH'} ${Object.values(mods).filter(Boolean).length}/7 MODS`:'IGNITION V97'}</div><div style={{position:'fixed',bottom:12,left:12,right:12,zIndex:10,display:'flex',flexDirection:'column',gap:8}}><div style={{display:'flex',gap:6,flexWrap:'wrap',justifyContent:'center',background:'rgba(0,0,0,0.8)',padding:10,borderRadius:16,border:'1px solid rgba(136,255,255,0.2)'}}>{dmxMap.map(d=><div key={d.ch} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,background:d.ch==='CH10'?'#fff':'rgba(17,17,17,0.9)',color:d.ch==='CH10'?'#000':d.color,padding:'6px 10px',borderRadius:12,fontSize:9,fontWeight:900,border:`1px solid ${d.color}40`,minWidth:62}}><span style={{fontSize:8,opacity:0.7}}>{d.ch}</span><span style={{fontSize:8}}>{d.name}</span><span style={{fontSize:11}}>{d.val}</span><div style={{width:40,height:3,background:'#333',borderRadius:999,overflow:'hidden'}}><div style={{width:`${(d.val/255)*100}%`,height:'100%',background:d.color,transition:'width 0.2s'}} /></div></div>)}</div><button style={{padding:12,borderRadius:999,border:'1px solid rgba(136,255,255,0.3)',background:dmxOn?'#88ffff':'#ffaa00',color:'#000',fontSize:10,fontWeight:900,letterSpacing:'0.10em',boxShadow:'0 0 20px rgba(136,255,255,0.3)'}}>💎 V97 DEZOOM 20% 1.1059 RESPIRE + 1 SEUL HALO 0.36 + ALLUMAGE QUANTIQUE 1.35 + QUANTUM 512 + DMX 10CH</button></div></div>);
 }
