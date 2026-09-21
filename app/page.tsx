@@ -1,5 +1,6 @@
+
 'use client';
-// V19.2.3.21 SUPER PROD EXPERT - 0 BRANCHE - NOYAU 15% ROND DIAMANT + 156P - COHERENT
+// V19.2.3.21 SUPER PROD EXPERT - 0 BRANCHE - NOYAU 15% ROND DIAMANT + 156P - COHERENT VALIDE
 import { useEffect,useRef,useState } from 'react';
 import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -19,7 +20,6 @@ export default function Page(){
   sc.add(new THREE.AmbientLight(0xffffff,0.68));
   const coreLight=new THREE.PointLight(0x88ffff,28,8); coreLight.position.set(0,0,1.2); sc.add(coreLight);
   const cg=new THREE.Group(); (cg as any).scale.setScalar(1.0); sc.add(cg);
-  // SUPER PROD - DIAMANT ROND 15% - FRESNEL 2.8
   const fresV='varying vec3 vN,vV;void main(){vN=normalize(normalMatrix*normal);vec4 mv=modelViewMatrix*vec4(position,1.0);vV=-mv.xyz;gl_Position=projectionMatrix*mv;}';
   const fresF='varying vec3 vN,vV;uniform float uT,uI,uE;void main(){float f=pow(1.0-dot(normalize(vN),normalize(vV)),2.8);float q=sin(uT*2.2)*0.04;float c=0.15+uI*0.34+q;float g=f*0.44*uI;vec3 base=vec3(0.78,0.92,1.0);vec3 col=base*(c+g)+vec3(0.34,0.76,1.0)*f*uI*0.52;col*=uE*1.5;gl_FragColor=vec4(col,0.64);}';
   const mMat=new (THREE as any).ShaderMaterial({uniforms:{uT:{value:0},uI:{value:0.15},uE:{value:0.34}},vertexShader:fresV,fragmentShader:fresF,transparent:true,depthWrite:false,side:THREE.DoubleSide});
@@ -28,14 +28,11 @@ export default function Page(){
   const inner=new THREE.Mesh(new THREE.SphereGeometry(0.24,48,48),innerMat); cg.add(inner);
   const inner2=new THREE.Mesh(new THREE.SphereGeometry(0.12,32,32),new (THREE as any).MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.32,depthWrite:false} as any)); cg.add(inner2);
   const glow=new THREE.Mesh(new THREE.SphereGeometry(0.38,32,32),new (THREE as any).MeshBasicMaterial({color:0x88ffff,transparent:true,opacity:0.04,depthWrite:false} as any)); cg.add(glow);
-  // 256P ATMOSPHERE SUBTILE
   const partGeo=new THREE.BufferGeometry(); const partPos=new Float32Array(256*3); for(let i=0;i<256;i++){ const th=i*2.399963; const ph=Math.acos(1-2*i/256); const r=1.9+Math.random()*2.2; partPos[i*3]=Math.sin(ph)*Math.cos(th)*r; partPos[i*3+1]=Math.sin(ph)*Math.sin(th)*r; partPos[i*3+2]=Math.cos(ph)*r; } partGeo.setAttribute('position',new THREE.BufferAttribute(partPos,3)); sc.add(new THREE.Points(partGeo,new (THREE as any).PointsMaterial({color:0x88ffff,size:0.012,transparent:true,opacity:0.28,depthWrite:false} as any)));
-  // 156P RONDES - PUR - PAS CARRE
   const geo=new THREE.BufferGeometry(); const pos=new Float32Array(156*3); const sz=new Float32Array(156); for(let i=0;i<156;i++){ const th=i*2.399963; const ph=Math.acos(1-2*i/156); const r=1.42+Math.random()*0.48; pos[i*3]=Math.sin(ph)*Math.cos(th)*r; pos[i*3+1]=Math.sin(ph)*Math.sin(th)*r; pos[i*3+2]=Math.cos(ph)*r; sz[i]=0.052+Math.random()*0.016; } geo.setAttribute('position',new THREE.BufferAttribute(pos,3)); geo.setAttribute('size',new THREE.BufferAttribute(sz,1));
   const pV='attribute float size; void main(){ vec4 mv=modelViewMatrix*vec4(position,1.0); gl_PointSize=size* (360.0 / -mv.z); gl_Position=projectionMatrix*mv;}';
   const pF='void main(){ float d=distance(gl_PointCoord,vec2(0.5)); if(d>0.5) discard; float a=1.0-smoothstep(0.2,0.5,d); gl_FragColor=vec4(vec3(0.18,0.76,0.98),a*0.74);}';
   const pMat=new (THREE as any).ShaderMaterial({vertexShader:pV,fragmentShader:pF,transparent:true,depthWrite:false}); const pts=new THREE.Points(geo,pMat); sc.add(pts);
-  // HALO ROND MODULE SELECT
   const hg=new THREE.Group(); sc.add(hg);
   const hc=new THREE.Mesh(new THREE.SphereGeometry(0.045,20,20),new (THREE as any).MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0,depthWrite:false})); hg.add(hc);
   const hr=new THREE.Mesh(new THREE.RingGeometry(0.07,0.12,40),new (THREE as any).MeshBasicMaterial({color:0x88ffff,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false})); hg.add(hr);
