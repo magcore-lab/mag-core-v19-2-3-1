@@ -4,14 +4,13 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-// V80 SAT FROLENT NOYAU 0.54 + ENERGIE -10% 90->81% + DEPLOIEMENTS GENERAL + ZOOM 1.616 SANS REFLET ELECTRISATION
+// V82 COEUR SEUL ALLUME 0.22 81% + 7 SAT 0.54 -10% SANS REFLET CAMERA SANS DIAMANT DEPLOIEMENT GENERAL
 export default function Page(){
  const ref=useRef<HTMLDivElement>(null);
  const dmxRef=useRef({ch1:127,ch2:85,ch3:165,ch4:128,ch5:100,ch6:80,ch7:160,ch8:90,ch9:70,ch10:210});
  const [on,setOn]=useState(false);
  const [dmxOn,setDmxOn]=useState(false);
- const [mods,setMods]=useState({webgpu:false,audio:false,midi:false,osc:false,artnet:false,sacn:false,dmx:false});
+ const [mods,setMods]=useState({webgpu:false,audio:false,midi:false,osc:false,dmx:false});
  useEffect(()=>{
   const mount=ref.current!; const scene=new THREE.Scene(); scene.background=new THREE.Color(0x000000);
   const camera=new THREE.PerspectiveCamera(28,window.innerWidth/window.innerHeight,0.1,100); camera.position.set(0,0,10.2);
@@ -19,31 +18,24 @@ export default function Page(){
   renderer.setSize(window.innerWidth,window.innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio,1.25));
   renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=0.88; mount.appendChild(renderer.domElement);
   const composer=new EffectComposer(renderer); composer.addPass(new RenderPass(scene,camera));
-  const bloom=new UnrealBloomPass(new THREE.Vector2(window.innerWidth,window.innerHeight),0.46,0.52,0.82); composer.addPass(bloom);
-  const tronShader={ uniforms:{ tDiffuse:{value:null}, uT:{value:0}, uScan:{value:0.14}, uChroma:{value:0.0008}, uVign:{value:0.26} }, vertexShader:`varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`, fragmentShader:`uniform sampler2D tDiffuse; uniform float uT; uniform float uScan; uniform float uChroma; uniform float uVign; varying vec2 vUv; void main(){ float chroma=uChroma+sin(vUv.x*16.0+uT*1.0)*0.0003; vec4 r=texture2D(tDiffuse,vec2(vUv.x+chroma,vUv.y)); vec4 g=texture2D(tDiffuse,vUv); vec4 b=texture2D(tDiffuse,vec2(vUv.x-chroma,vUv.y)); vec3 col=vec3(r.r,g.g,b.b); float scan=sin(vUv.y*900.0+uT*4.0)*0.02*uScan; col-=scan; float vign=1.0-dot(vUv-0.5,vUv-0.5)*uVign; vec2 cin=vUv*2.0-1.0; float letter=1.0-smoothstep(0.92,1.08,abs(cin.y*1.8)); col*=vign*letter; gl_FragColor=vec4(col,1.0); }` };
-  const tronPass=new ShaderPass(tronShader); composer.addPass(tronPass);
-  setMods({webgpu:false,audio:false,midi:false,osc:false,artnet:false,sacn:false,dmx:false});
+  const bloom=new UnrealBloomPass(new THREE.Vector2(window.innerWidth,window.innerHeight),0.42,0.48,0.88); composer.addPass(bloom);
+  setMods({webgpu:false,audio:false,midi:false,osc:false,dmx:false});
   if(typeof navigator!=='undefined' && (navigator as any).gpu){ (navigator as any).gpu.requestAdapter({powerPreference:'high-performance'}).then((a:any)=>{ if(a) setMods(m=>({...m,webgpu:true})); }); }
   let ws:any=null; let retry=0;
-  const connectWS=()=>{ try{ ws=new WebSocket('ws://localhost:8081'); ws.onopen=()=>{ retry=0; setDmxOn(true); setMods(m=>({...m,osc:true,dmx:true})); }; ws.onmessage=(e:any)=>{ try{ const msg=JSON.parse(e.data); if(msg.channels){ const c=msg.channels; const clamp=(v:number)=>Math.max(0,Math.min(255,Math.floor(v))); dmxRef.current={ch1:clamp(c[0]),ch2:clamp(c[1]),ch3:clamp(c[2]),ch4:clamp(c[3]??128),ch5:clamp(c[4]??100),ch6:clamp(c[5]??80),ch7:clamp(c[6]??160),ch8:clamp(c[7]??90),ch9:clamp(c[8]??70),ch10:clamp(c[9])}; if((msg as any).type==='artnet') setMods(mm=>({...mm,artnet:true})); if((msg as any).type==='sacn') setMods(mm=>({...mm,sacn:true})); } }catch{} }; ws.onclose=()=>{ setDmxOn(false); setTimeout(connectWS,Math.min(10000,400*Math.pow(2,retry++))); }; ws.onerror=()=>{ try{ws.close();}catch{} }; }catch{} }; connectWS();
-  try{ const AudioCtx=(window as any).AudioContext || (window as any).webkitAudioContext; const ctx=new AudioCtx(); const analyser=ctx.createAnalyser(); analyser.fftSize=512; const data=new Uint8Array(256); const osc=ctx.createOscillator(); osc.frequency.value=110; osc.connect(analyser); analyser.connect(ctx.destination); osc.start(); let lowAvg=0; let beat=0; const loop=()=>{ analyser.getByteFrequencyData(data); const low=data.slice(0,20).reduce((a,b)=>a+b,0)/20; lowAvg=lowAvg*0.92+low*0.08; if(low>lowAvg*1.35 && low>95 && performance.now()-beat>180){ beat=performance.now(); bloom.strength=0.60; setTimeout(()=>{ bloom.strength=0.46; },130); } setMods(m=>({...m,audio:true})); requestAnimationFrame(loop); }; loop(); }catch{}
-  try{ if((navigator as any).requestMIDIAccess){ (navigator as any).requestMIDIAccess().then((midi:any)=>{ for(const input of midi.inputs.values()){ input.onmidimessage=(e:any)=>{ const [st]=e.data; if(st===144){ setMods(mm=>({...mm,midi:true})); } }; } }); } }catch{}
-  scene.add(new THREE.AmbientLight(0xffffff,0.32));
-  const key=new THREE.PointLight(0xffffff,76,50); key.position.set(4,4,5); scene.add(key);
-  const coreLight=new THREE.PointLight(0x88ccff,42,8); scene.add(coreLight);
-  const coreLight2=new THREE.PointLight(0xaaffff,32,6); coreLight2.position.set(0,0,1.4); scene.add(coreLight2);
+  const connectWS=()=>{ try{ ws=new WebSocket('ws://localhost:8081'); ws.onopen=()=>{ retry=0; setDmxOn(true); setMods(m=>({...m,osc:true,dmx:true})); }; ws.onmessage=(e:any)=>{ try{ const msg=JSON.parse(e.data); if(msg.channels){ const c=msg.channels; const cl=(v:number)=>Math.max(0,Math.min(255,Math.floor(v))); dmxRef.current={ch1:cl(c[0]),ch2:cl(c[1]),ch3:cl(c[2]),ch4:cl(c[3]??128),ch5:cl(c[4]??100),ch6:cl(c[5]??80),ch7:cl(c[6]??160),ch8:cl(c[7]??90),ch9:cl(c[8]??70),ch10:cl(c[9])}; } }catch{} }; ws.onclose=()=>{ setDmxOn(false); setTimeout(connectWS,Math.min(10000,400*Math.pow(2,retry++))); }; ws.onerror=()=>{ try{ws.close();}catch{} }; }catch{} }; connectWS();
+  try{ const AudioCtx=(window as any).AudioContext || (window as any).webkitAudioContext; const ctx=new AudioCtx(); const analyser=ctx.createAnalyser(); analyser.fftSize=256; const osc=ctx.createOscillator(); osc.frequency.value=110; osc.connect(analyser); analyser.connect(ctx.destination); osc.start(); const loop=()=>{ analyser.getByteFrequencyData(new Uint8Array(128)); setMods(m=>({...m,audio:true})); requestAnimationFrame(loop); }; loop(); }catch{}
+  try{ if((navigator as any).requestMIDIAccess){ (navigator as any).requestMIDIAccess().then(()=>setMods(m=>({...m,midi:true}))); } }catch{}
+  scene.add(new THREE.AmbientLight(0x88ffff,0.28));
+  const coreLight=new THREE.PointLight(0x88ffff,38,5); scene.add(coreLight);
   const coreGroup=new THREE.Group(); (coreGroup as any).scale.setScalar(1.61636); scene.add(coreGroup);
   const satGroup=new THREE.Group(); coreGroup.add(satGroup);
-  const quantGroup=new THREE.Group(); coreGroup.add(quantGroup);
   const electrGroup=new THREE.Group(); coreGroup.add(electrGroup);
   const SAT_COUNT=7; const RADIUS=0.54;
-  const diamV='varying vec3 vN; varying vec3 vV; void main(){ vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.0); vV=-mv.xyz; gl_Position=projectionMatrix*mv; }';
-  const diamF='varying vec3 vN; varying vec3 vV; uniform float uT; uniform float uE; uniform float uPower; void main(){ float f=pow(1.0-dot(normalize(vN),normalize(vV)),3.0); float c=0.48+f*0.20; vec3 base=vec3(0.58,0.78,0.92); base*=uE*uPower; gl_FragColor=vec4(base*c,0.48); }';
-  const middleMat=new THREE.ShaderMaterial({uniforms:{uT:{value:0},uE:{value:0.60},uPower:{value:0.81}},vertexShader:diamV,fragmentShader:diamF,transparent:true,side:THREE.DoubleSide} as any);
-  const middle=new THREE.Mesh(new THREE.IcosahedronGeometry(0.48,3),middleMat); coreGroup.add(middle);
-  const innerMat=new THREE.MeshPhysicalMaterial({color:0x88ccff,emissive:0x88ffff,emissiveIntensity:0.36,transmission:0.98,thickness:0.40,ior:2.65,roughness:0.08,clearcoat:0.5,transparent:true,opacity:0.58} as any);
+  const innerMat=new THREE.MeshStandardMaterial({color:0xffffff,emissive:0x88ffff,emissiveIntensity:1.35,transparent:true,opacity:0.92} as any);
   const inner=new THREE.Mesh(new THREE.SphereGeometry(0.22,32,32),innerMat); coreGroup.add(inner);
-  const sats:any[]=[]; const quantLines:any[]=[]; const electrLines:any[]=[];
+  const glowMat=new THREE.MeshBasicMaterial({color:0x88ffff,transparent:true,opacity:0.14} as any);
+  const glow=new THREE.Mesh(new THREE.SphereGeometry(0.34,32,32),glowMat); coreGroup.add(glow);
+  const sats:any[]=[]; const electrLines:any[]=[];
   for(let i=0;i<SAT_COUNT;i++){
     const ang=i*(360/SAT_COUNT)*Math.PI/180;
     const g=new THREE.Group();
@@ -54,49 +46,34 @@ export default function Page(){
     g.position.set(Math.cos(ang)*RADIUS,Math.sin(ang)*RADIUS,0); satGroup.add(g);
     const l=new THREE.PointLight(0x88ffff,38.8,2.8); l.position.copy(g.position); satGroup.add(l);
     sats.push({group:g,core:c,halo:h,pulse:p,light:l,baseAngle:ang,radius:RADIUS,gravPhase:Math.random()*6.28318});
+    const geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),g.position.clone()]);
+    const mat=new THREE.LineBasicMaterial({color:0x88ccff,transparent:true,opacity:0.12} as any);
+    const line=new THREE.Line(geo,mat); electrGroup.add(line); electrLines.push({line,mat,idx:i});
   }
-  for(let i=0;i<SAT_COUNT;i++){
-    const geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]);
-    const mat=new THREE.LineBasicMaterial({color:0x88ffff,transparent:true,opacity:0.0} as any);
-    const line=new THREE.Line(geo,mat); quantGroup.add(line); quantLines.push({line,mat,i,j:(i+1)%SAT_COUNT});
-  }
-  for(let k=0;k<10;k++){
-    const a1=Math.random()*Math.PI*2; const r1=0.22; const r2=0.48;
-    const p1=new THREE.Vector3(Math.cos(a1)*r1,Math.sin(a1)*r1,0); const p2=new THREE.Vector3(Math.cos(a1+0.10)*r2,Math.sin(a1+0.10)*r2,0);
-    const geo=new THREE.BufferGeometry().setFromPoints([p1,p2]);
-    const mat=new THREE.LineBasicMaterial({color:0x88ccff,transparent:true,opacity:0.22} as any);
-    const line=new THREE.Line(geo,mat); electrGroup.add(line); electrLines.push({line,mat,p1,p2,phase:Math.random()*6.28});
-  }
-  let ignited=false; const ignite=()=>{ if(ignited) return; ignited=true; setOn(true); bloom.strength=0.46; (bloom as any).radius=0.52; (innerMat as any).emissiveIntensity=0.54; inner.scale.setScalar(1.08); middleMat.uniforms.uE.value=0.78; middleMat.uniforms.uPower.value=0.81; coreLight.intensity=42; coreLight2.intensity=32; renderer.toneMappingExposure=0.88; }; setTimeout(ignite,200); window.addEventListener('pointerdown',ignite,{once:true}); window.addEventListener('touchstart',ignite,{once:true});
+  let ignited=false; const ignite=()=>{ if(ignited) return; ignited=true; setOn(true); bloom.strength=0.42; (bloom as any).radius=0.48; innerMat.emissiveIntensity=1.85; inner.scale.setScalar(1.08); glow.scale.setScalar(1.12); coreLight.intensity=38; renderer.toneMappingExposure=0.88; }; setTimeout(ignite,200); window.addEventListener('pointerdown',ignite,{once:true}); window.addEventListener('touchstart',ignite,{once:true});
   let t=0; let raf=0;
   const animate=()=>{
     raf=requestAnimationFrame(animate); t+=0.016;
-    middleMat.uniforms.uT.value=t; tronPass.uniforms.uT.value=t;
     const dmx=dmxRef.current; const ch7=dmx.ch7/255;
     const nucleoPower=0.81; const gravStrength=0.0016*nucleoPower*(0.5+ch7*0.9);
-    const quantFlicker=Math.sin(t*8.3)*0.08;
-    sats.forEach((s:any)=>{
+    sats.forEach((s:any,i:number)=>{
       s.baseAngle+=0.0020+gravStrength*3.0;
-      const ps=1.0+Math.sin(t*2.4+s.gravPhase)*0.18+quantFlicker;
+      const ps=1.0+Math.sin(t*2.4+s.gravPhase)*0.18;
       s.core.scale.setScalar(ps); s.halo.scale.setScalar(1.0+Math.sin(t*1.4+s.gravPhase)*0.20); s.pulse.scale.setScalar(1.0+Math.sin(t*0.9+s.gravPhase)*0.30);
-      s.pulse.material.opacity=0.10+Math.sin(t*1.3+s.gravPhase)*0.05+quantFlicker*0.12; s.light.intensity=38.8+Math.sin(t*2.2+s.gravPhase)*10+quantFlicker*6;
+      s.pulse.material.opacity=0.10+Math.sin(t*1.3+s.gravPhase)*0.05; s.light.intensity=38.8+Math.sin(t*2.2+s.gravPhase)*10;
       const r=s.radius+Math.sin(t*0.7+s.gravPhase)*0.006; const ang=s.baseAngle; const x=Math.cos(ang)*r; const y=Math.sin(ang)*r;
       s.group.position.set(x,y,0); s.light.position.set(x,y,0);
-    });
-    quantLines.forEach((q:any)=>{
-      const a=sats[q.i].group.position; const b=sats[q.j].group.position;
-      q.line.geometry.setFromPoints([a,b]); const d=a.distanceTo(b); const op=ch7*0.32*(1.0-d/1.2); q.mat.opacity=Math.max(0,op+quantFlicker*0.08);
-    });
-    electrLines.forEach((e:any)=>{
-      const flick=0.22+Math.sin(t*12.7+e.phase)*0.14+Math.sin(t*5.3)*0.08;
-      e.mat.opacity=flick*(0.6+ch7*0.7);
+      electrLines[i].line.geometry.setFromPoints([new THREE.Vector3(0,0,0),s.group.position]);
+      electrLines[i].mat.opacity=0.10+Math.sin(t*8.3+i)*0.06+ch7*0.10;
     });
     const rot=0.0006*(0.5+(dmx.ch1/255)*0.8);
-    coreGroup.rotation.y+=rot*0.18; middle.rotation.y+=rot*0.34; inner.rotation.y-=rot*0.44;
+    coreGroup.rotation.y+=rot*0.18; inner.rotation.y-=rot*0.44;
+    innerMat.emissiveIntensity=1.35+Math.sin(t*1.8)*0.12;
+    glow.material.opacity=0.14+Math.sin(t*2.0)*0.04;
     composer.render();
   }; animate();
   const onResize=()=>{ camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth,window.innerHeight); composer.setSize(window.innerWidth,window.innerHeight); }; window.addEventListener('resize',onResize);
   return()=>{ cancelAnimationFrame(raf); window.removeEventListener('resize',onResize); mount.removeChild(renderer.domElement); renderer.dispose(); if(ws) ws.close(); };
  },[]);
- return(<div style={{width:'100%',height:'100dvh',background:'#000',overflow:'hidden',touchAction:'none'}}><div ref={ref} style={{position:'fixed',inset:0}}/><div style={{position:'fixed',top:12,left:'50%',transform:'translateX(-50%)',background:on?'#88ffff':'#3dd598',color:'#000',padding:'8px 20px',borderRadius:999,fontSize:11,fontWeight:900,letterSpacing:'0.15em',zIndex:10}}>{on?`V80 SAT FROLENT 0.54 ENERGIE -10% 81% DEPLOIEMENT GENERAL ${dmxOn?'DMX WS':'DMX SYNTH'} ${Object.values(mods).filter(Boolean).length}/7 MODS`:'IGNITION V80 FROLENT -10%'}</div><div style={{position:'fixed',bottom:0,left:0,right:0,zIndex:10,padding:12}}><button style={{padding:14,borderRadius:999,border:0,background:'#fff',color:'#000',fontSize:10,fontWeight:900,letterSpacing:'0.10em'}}>V80 SAT FROLENT NOYAU 0.54 ENERGIE -10% 81% DEPLOIEMENTS GENERAL QUANTIQUE ELECTRISATION</button></div></div>);
+ return(<div style={{width:'100%',height:'100dvh',background:'#000',overflow:'hidden',touchAction:'none'}}><div ref={ref} style={{position:'fixed',inset:0}}/><div style={{position:'fixed',top:12,left:'50%',transform:'translateX(-50%)',background:on?'#88ffff':'#3dd598',color:'#000',padding:'8px 20px',borderRadius:999,fontSize:11,fontWeight:900,letterSpacing:'0.15em',zIndex:10}}>{on?`V82 COEUR SEUL 0.22 81% + 7 SAT FROLENT 0.54 SANS REFLET ${dmxOn?'DMX WS':'DMX SYNTH'} ${Object.values(mods).filter(Boolean).length}/5 MODS`:'IGNITION V82 COEUR SEUL'}</div><div style={{position:'fixed',bottom:0,left:0,right:0,zIndex:10,padding:12}}><button style={{padding:14,borderRadius:999,border:0,background:'#fff',color:'#000',fontSize:10,fontWeight:900,letterSpacing:'0.10em'}}>V82 COEUR SEUL ALLUME 81% + 7 SATELLITES FROLENT 0.54 SANS REFLET CAMERA SANS DIAMANT</button></div></div>);
 }
