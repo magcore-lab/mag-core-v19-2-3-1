@@ -1,109 +1,193 @@
-
 "use client";
 
 import { useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Float, Stars, Trail } from "@react-three/drei";
+import {
+  Float,
+  Environment,
+  Sparkles,
+  PerspectiveCamera,
+  Lightformer
+} from "@react-three/drei";
+import { EffectComposer, Bloom, ChromaticAberration } from "@react-three/postprocessing";
 import * as THREE from "three";
+import { BlendFunction } from "postprocessing";
 
-function Core() {
-  const ref = useRef<THREE.Mesh>(null);
+function DiamondCore() {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const innerRef = useRef<THREE.Mesh>(null);
+
   useFrame((_, delta) => {
-    if (!ref.current) return;
-    ref.current.rotation.y += delta * 0.2;
-    ref.current.rotation.x += delta * 0.1;
+    if (!meshRef.current) return;
+    meshRef.current.rotation.y += delta * 0.15;
+    meshRef.current.rotation.z += delta * 0.05;
+    if (innerRef.current) {
+      innerRef.current.rotation.y -= delta * 0.3;
+    }
   });
 
   return (
-    <Float speed={2} rotationIntensity={0.5} floatIntensity={1.5}>
-      <mesh ref={ref}>
-        <sphereGeometry args={[1.2, 64, 64]} />
-        <meshStandardMaterial
-          color="#0a4bff"
-          emissive="#002aff"
-          emissiveIntensity={2.5}
-          roughness={0.2}
-          metalness={0.8}
-          wireframe={false}
+    <Float speed={1.2} rotationIntensity={0.2} floatIntensity={0.8}>
+      {/* DIAMANT EXTERIEUR - ECLAT */}
+      <mesh ref={meshRef}>
+        <icosahedronGeometry args={[1.3, 4]} />
+        <meshPhysicalMaterial
+          color="#ffffff"
+          transmission={1}
+          thickness={0.8}
+          ior={2.4}
+          roughness={0}
+          metalness={0}
+          clearcoat={1}
+          clearcoatRoughness={0.05}
+          envMapIntensity={3.5}
+          dispersion={0.15}
+          iridescence={0.3}
+          iridescenceIOR={1.8}
         />
       </mesh>
-      <mesh>
-        <sphereGeometry args={[1.35, 32, 32]} />
-        <meshBasicMaterial color="#0015ff" transparent opacity={0.15} wireframe />
+
+      {/* NOYAU QUANTIQUE INTERIEUR */}
+      <mesh ref={innerRef} scale={0.65}>
+        <icosahedronGeometry args={[1, 3]} />
+        <meshStandardMaterial
+          color="#0088ff"
+          emissive="#0044ff"
+          emissiveIntensity={3}
+          wireframe
+          transparent
+          opacity={0.35}
+        />
+      </mesh>
+
+      {/* COEUR D'ENERGIE */}
+      <mesh scale={0.25}>
+        <sphereGeometry args={[1, 32, 32]} />
+        <meshBasicMaterial color="#aaccff" />
+        <pointLight intensity={8} distance={5} color="#4488ff" />
       </mesh>
     </Float>
   );
 }
 
-function Drone({ pos, color = "#00aaff" }: { pos: [number, number, number]; color?: string }) {
-  const ref = useRef<THREE.Group>(null);
-  const t = useMemo(() => Math.random() * Math.PI * 2, []);
+function QuantumField() {
+  return (
+    <>
+      <Sparkles
+        count={400}
+        scale={[12, 12, 12]}
+        size={0.4}
+        speed={0.3}
+        noise={0.2}
+        color="#88ccff"
+      />
+      <Sparkles
+        count={150}
+        scale={[4, 4, 4]}
+        size={1.2}
+        speed={0.6}
+        noise={0.1}
+        color="#ffffff"
+      />
+    </>
+  );
+}
+
+function Drones() {
+  const groupRef = useRef<THREE.Group>(null);
+
+  const droneData = useMemo(() =>
+    Array.from({ length: 6 }, (_, i) => ({
+      pos: [
+        Math.cos((i / 6) * Math.PI * 2) * (2.8 + Math.random()),
+        (Math.random() - 0.5) * 2,
+        Math.sin((i / 6) * Math.PI * 2) * (2.8 + Math.random())
+      ] as [number, number, number],
+      speed: 0.4 + Math.random() * 0.4,
+      color: i % 2 === 0? "#00ddff" : "#8a2be2"
+    })), []
+  );
 
   useFrame(({ clock }) => {
-    if (!ref.current) return;
-    const time = clock.elapsedTime + t;
-    ref.current.position.x = pos[0] + Math.sin(time * 0.6) * 1.2;
-    ref.current.position.z = pos[2] + Math.cos(time * 0.5) * 1.2;
-    ref.current.position.y = pos[1] + Math.sin(time * 0.8) * 0.3;
+    if (!groupRef.current) return;
+    groupRef.current.rotation.y = clock.elapsedTime * 0.08;
   });
 
   return (
-    <group ref={ref} position={pos}>
-      <Trail width={1.5} length={8} color={color} attenuation={(w) => w}>
-        <mesh>
-          <sphereGeometry args={[0.06, 16, 16]} />
-          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={4} />
-        </mesh>
-      </Trail>
-      <pointLight color={color} intensity={2} distance={3} />
+    <group ref={groupRef}>
+      {droneData.map((d, i) => (
+        <Float key={i} speed={d.speed * 2} floatIntensity={0.5}>
+          <group position={d.pos}>
+            <mesh>
+              <octahedronGeometry args={[0.08, 0]} />
+              <meshStandardMaterial
+                color={d.color}
+                emissive={d.color}
+                emissiveIntensity={5}
+              />
+            </mesh>
+            <pointLight color={d.color} intensity={1.5} distance={2} />
+          </group>
+        </Float>
+      ))}
     </group>
   );
 }
 
 function Scene() {
-  const drones = useMemo<[number, number, number][]>(
-    () => [
-      [3, 0.5, 1],
-      [-3, -0.8, -1.5],
-      [1.5, 1.8, -2.5],
-      [-2, 1.2, 2.2],
-      [0, -2, 0.5],
-    ],
-    []
-  );
-
   return (
     <>
-      <Stars radius={100} depth={50} count={5000} factor={4} fade speed={1} />
-      <ambientLight intensity={0.3} />
-      <pointLight position={[5, 5, 5]} intensity={2} color="#2a5bff" />
-      <pointLight position={[-5, -5, -5]} intensity={1} color="#0011ff" />
-      <Core />
-      {drones.map((p, i) => (
-        <Drone key={i} pos={p} color={i % 2 === 0? "#00aaff" : "#4a00ff"} />
-      ))}
+      <PerspectiveCamera makeDefault position={[0, 0, 5.5]} fov={45} />
+
+      {/* ENVIRONNEMENT QUANTIQUE POUR REFLET DIAMANT */}
+      <Environment resolution={512}>
+        <group rotation={[0, 0, Math.PI / 4]}>
+          <Lightformer intensity={4} rotation-x={Math.PI / 2} position={[0, 4, -9]} scale={[10, 10, 1]} color="#4a8bff" />
+          <Lightformer intensity={2} rotation-y={Math.PI / 2} position={[-5, 1, -1]} scale={[10, 2, 1]} color="#ffffff" />
+          <Lightformer intensity={2} rotation-y={-Math.PI / 2} position={[5, 1, -1]} scale={[10, 2, 1]} color="#8a4dff" />
+          <Lightformer intensity={1} position={[0, -5, -2]} scale={[10, 10, 1]} color="#001a4d" />
+        </group>
+      </Environment>
+
+      <ambientLight intensity={0.15} />
+
+      <QuantumField />
+      <DiamondCore />
+      <Drones />
+
+      <EffectComposer>
+        <Bloom
+          intensity={1.2}
+          luminanceThreshold={0.2}
+          luminanceSmoothing={0.8}
+          mipmapBlur
+          radius={0.6}
+        />
+        <ChromaticAberration
+          blendFunction={BlendFunction.NORMAL}
+          offset={[0.0003, 0.0003]}
+        />
+      </EffectComposer>
     </>
   );
 }
 
 export default function Page() {
   return (
-    <main className="relative h-screen w-screen bg-black overflow-hidden">
-      <div className="absolute inset-0 z-0">
-        <Canvas camera={{ position: [0, 0, 6], fov: 60 }} dpr={[1, 2]} gl={{ antialias: true, alpha: false }}>
-          <color attach="background" args={["#000000"]} />
-          <Scene />
-        </Canvas>
-      </div>
+    <main className="h-screen w-screen bg-[#020208] overflow-hidden">
+      <Canvas dpr={[1, 2]} gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}>
+        <Scene />
+      </Canvas>
 
-      <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-between p-6">
-        <div className="w-full flex justify-between text-[10px] tracking-[0.3em] text-blue-400/60 uppercase">
-          <span>v19.2.3.1 / MAGCORE-LAB</span>
-          <span>SYSTEM READY • PRODUCTION</span>
+      <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-5">
+        <div className="flex justify-between font-mono text-[9px] tracking-[0.35em] text-white/30">
+          <span>MAGCORE • v19.3 QUANTUM-DIAMOND</span>
+          <span className="text-cyan-300/60">● LIVE / PRODUCTION / READY</span>
         </div>
-        <div className="text-center">
-          <h1 className="text-white text-2xl tracking-[0.4em] font-mono">MAG-CORE</h1>
-          <p className="text-blue-400/50 text-[10px] tracking-[0.5em] mt-2">QUANTUM INTELLIGENT NETWORK</p>
+        <div className="text-center font-mono">
+          <h1 className="text-white/90 text-xl tracking-[0.6em]">DIAMOND CORE</h1>
+          <div className="mt-1 h-px w-32 mx-auto bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent" />
+          <p className="mt-2 text-cyan-200/40 text-[9px] tracking-[0.6em]">IOR 2.4 • DISPERSION 0.15 • QUANTUM FIELD ACTIVE</p>
         </div>
         <div className="h-4" />
       </div>
