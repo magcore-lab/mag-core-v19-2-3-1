@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
@@ -17,6 +18,7 @@ export default function Page(){
  useEffect(()=>{
   const mnt=ref.current!;
   const sc=new THREE.Scene(); sc.background=new THREE.Color(0x000000);
+  sc.fog=new THREE.FogExp2(0x000208,0.032);
   const mob=innerWidth<768;
   const cam=new THREE.PerspectiveCamera(34,innerWidth/innerHeight,0.1,100);
   cam.position.set(0,0,mob?5.2:C.z);
@@ -24,11 +26,11 @@ export default function Page(){
   ren.setSize(innerWidth,innerHeight);
   ren.setPixelRatio(Math.min(devicePixelRatio,1.2));
   ren.toneMapping=THREE.ACESFilmicToneMapping;
-  ren.toneMappingExposure=0.62;
+  ren.toneMappingExposure=0.68;
   mnt.appendChild(ren.domElement);
   const comp=new EffectComposer(ren);
   comp.addPass(new RenderPass(sc,cam));
-  const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),0.18,0.72,0.92);
+  const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),0.22,0.72,0.88);
   comp.addPass(bloom);
 
   if((navigator as any).gpu){
@@ -67,12 +69,10 @@ export default function Page(){
   }catch{}
   try{ if((navigator as any).requestMIDIAccess) (navigator as any).requestMIDIAccess().then(()=>setMod(s=>({...s,midi:true}))); }catch{}
 
-  // ÉCLAIRAGE INTÉRIEUR SPHÈRE NOYAU - BLEU PROFOND 3/4%
   sc.add(new THREE.AmbientLight(0x000822,0.18));
   const l1=new THREE.PointLight(0x0011ff,1.8,3.2); l1.position.set(0,0,0); sc.add(l1);
   const l2=new THREE.PointLight(0x0022ff,0.82,2.2); l2.position.set(0.12,0.08,0.12); sc.add(l2);
   const l3=new THREE.PointLight(0x001133,0.42,4); l3.position.set(-0.22,-0.18,0.22); sc.add(l3);
-  const key=new THREE.DirectionalLight(0x0011aa,0.28); key.position.set(2,3,2); sc.add(key);
 
   const g=new THREE.Group(); g.scale.setScalar(1.0); sc.add(g);
 
@@ -98,6 +98,28 @@ export default function Page(){
   });
   const inn2=new THREE.Mesh(new THREE.IcosahedronGeometry(C.R2,2),m2); g.add(inn2);
 
+  // DRONES PROJECTEURS CINEMA - 6 drones en orbite HEX
+  const drones: any[] = [];
+  const droneGroup=new THREE.Group(); sc.add(droneGroup);
+  for(let i=0;i<6;i++){
+    const ang=i*60*Math.PI/180;
+    const drone=new THREE.Group();
+    const body=new THREE.Mesh(new THREE.SphereGeometry(0.032,8,8),new THREE.MeshBasicMaterial({color:0x0011ff}));
+    drone.add(body);
+    const spot=new THREE.SpotLight(0x0022ff,0,8,Math.PI/6,0.42,0.8);
+    spot.position.set(0,0,0);
+    spot.target=g;
+    sc.add(spot.target);
+    drone.add(spot);
+    const beam=new THREE.Mesh(new THREE.CylinderGeometry(0.002,0.08,3.2,6),new THREE.MeshBasicMaterial({color:0x0011ff,transparent:true,opacity:0.08}));
+    beam.rotation.x=Math.PI/2; beam.position.z=-1.6;
+    drone.add(beam);
+    drone.userData={ang,baseR:2.8,spot,beam,idx:i};
+    drones.push(drone);
+    droneGroup.add(drone);
+  }
+
+  // ENVIRONNEMENT QUANTIQUE INTELLIGENT - 156P + champ adaptatif
   const geo=new THREE.BufferGeometry(); const pos=new Float32Array(156*3);
   for(let i=0;i<156;i++){
     const th=i*2.399963, ph=Math.acos(1-2*i/156), r=2.8+Math.random()*4.2;
@@ -109,11 +131,18 @@ export default function Page(){
   const pMat=new THREE.PointsMaterial({color:0x0011aa,size:0.028,transparent:true,opacity:0.32,sizeAttenuation:true});
   const pts=new THREE.Points(geo,pMat); sc.add(pts);
 
+  const qGeo=new THREE.BufferGeometry(); const qPos=new Float32Array(72*3);
+  for(let i=0;i<72;i++){ const a=i/72*Math.PI*2; qPos[i*3]=Math.cos(a)*3.2; qPos[i*3+1]=Math.sin(a)*3.2; qPos[i*3+2]=Math.sin(a*3)*0.5; }
+  qGeo.setAttribute('position',new THREE.BufferAttribute(qPos,3));
+  const qMat=new THREE.PointsMaterial({color:0x001133,size:0.022,transparent:true,opacity:0.18});
+  const qField=new THREE.Points(qGeo,qMat); sc.add(qField);
+
   let ign=false, presence=0;
   const ignite=()=>{
     if(ign) return; ign=true; setOn(true);
-    bloom.strength=0.18; m1.emissiveIntensity=C.e1; m2.emissiveIntensity=C.e2;
-    l1.intensity=1.8; l2.intensity=0.82; ren.toneMappingExposure=0.62;
+    bloom.strength=0.22; m1.emissiveIntensity=C.e1; m2.emissiveIntensity=C.e2;
+    l1.intensity=1.8; l2.intensity=0.82;
+    drones.forEach(d=>{ d.userData.spot.intensity=2.8; d.userData.beam.material.opacity=0.08; });
   };
   const onPointer=()=>{ presence=1; ignite(); };
   addEventListener('pointermove',onPointer);
@@ -127,6 +156,7 @@ export default function Page(){
     if(!ws||ws.readyState!==1){
       dmx.current.ch[1]=Math.floor(c1); dmx.current.ch[2]=Math.floor(c2);
       dmx.current.ch[3]=Math.floor(c3); dmx.current.ch[10]=Math.floor(c10);
+      for(let i=0;i<6;i++){ dmx.current.ch[21+i]=Math.floor(88+Math.sin(tt*0.4+i)*32); }
       dmx.current={ch:dmx.current.ch,c1:Math.floor(c1),c2:Math.floor(c2),c3:Math.floor(c3),c10:Math.floor(c10)};
     }
   };
@@ -135,15 +165,29 @@ export default function Page(){
     const master=(dmx.current.c10||9)/255;
     const prop=(dmx.current.c1/255)*0.32*master;
     const bMod=(dmx.current.c2/255)*0.08;
-    bloom.strength=0.18+bMod*0.08+presence*0.18;
+    bloom.strength=0.22+bMod*0.08+presence*0.12;
     const rot=0.00022*(0.5+prop+presence*0.42);
     const breath=1.0+Math.sin(t*0.72)*0.022+Math.sin(t*1.22)*0.008+presence*0.042;
     g.scale.setScalar(breath);
     g.rotation.y+=rot; g.rotation.x+=rot*0.08;
     inn.rotation.y-=rot*0.18; inn2.rotation.y+=rot*0.28;
-    l1.intensity=1.8+presence*1.2+Math.sin(t*0.88)*0.22;
-    l2.intensity=0.82+presence*0.52;
-    pts.rotation.y+=0.00018; presence*=0.992;
+
+    drones.forEach((d, idx)=>{
+      const ch=dmx.current.ch[21+idx]||88;
+      const intensity=(ch/255)*3.2+presence*1.2;
+      const ang=d.userData.ang + t*0.18 + idx*0.12 + prop*0.8;
+      const r=d.userData.baseR + Math.sin(t*0.6+idx)*0.18 + presence*0.32;
+      const y=Math.sin(t*0.42+idx*0.8)*0.42 + presence*0.18;
+      d.position.set(Math.cos(ang)*r, y, Math.sin(ang)*r);
+      d.lookAt(g.position);
+      d.userData.spot.intensity=intensity;
+      d.userData.beam.material.opacity=0.04+intensity*0.018;
+      d.userData.beam.scale.z=0.8+intensity*0.22;
+    });
+
+    pts.rotation.y+=0.00018;
+    qField.rotation.y-=0.00012;
+    presence*=0.992;
     comp.render();
   }; anim();
 
@@ -156,7 +200,12 @@ export default function Page(){
   <div style={{width:'100%',height:'100dvh',background:'#000000',overflow:'hidden'}}>
     <div ref={ref} style={{position:'fixed',inset:0}}/>
     <div style={{position:'fixed',top:12,left:'50%',transform:'translateX(-50%)',background:on?'#001133':'#0a0a0a',color:'#88aaff',padding:'8px 20px',borderRadius:999,fontSize:11,fontWeight:900,zIndex:10}}>
-      {on?`💎 V19.2.3.46 ZOOM +40% Z6.12 ENERGY 3/4% PRESENCE ${dmxOn?'DMX WS':'DMX SYNTH'} ${Object.values(mod).filter(Boolean).length}/4`:'⚡ V19.2.3.46 ZOOM 40% 3/4%'}
+      {on?`💎 V19.2.3.47 DRONES CINEMA Z6.12 3/4% ${dmxOn?'DMX WS':'DMX SYNTH'} ${Object.values(mod).filter(Boolean).length}/4`:'⚡ V19.2.3.47 DRONES'}
+    </div>
+    <div style={{position:'fixed',bottom:12,left:12,right:12,display:'flex',justifyContent:'center',zIndex:10}}>
+      <div style={{padding:'8px 14px',borderRadius:999,background:'rgba(0,17,51,0.82)',color:'#88aaff',fontSize:9,fontWeight:800,textAlign:'center'}}>
+        DRONES 6x HEX SPOT 0x0022ff CH21-26 • DMX 512CH Art-Net 6454 sACN 5568 • QUANTIQUE INTELLIGENT 156P+72L • WEBGPU • CINEMA ACEScg
+      </div>
     </div>
   </div>
  );
