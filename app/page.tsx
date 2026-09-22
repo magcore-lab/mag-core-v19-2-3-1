@@ -6,7 +6,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-const C={midR:0.48,trans:0.92,ior:2.32,thick:0.48,op:0.88,R1:0.22,R2:0.11,e1:0.82,e2:1.12,z:10.2};
+const C={midR:0.48,trans:0.92,ior:2.32,thick:0.48,op:0.88,R1:0.22,R2:0.11,e1:0.82,e2:1.12,z:13.06};
 
 export default function Page(){
  const ref=useRef<HTMLDivElement>(null);
@@ -20,8 +20,7 @@ export default function Page(){
   const sc=new THREE.Scene(); sc.background=new THREE.Color(0x000000);
   const mob=innerWidth<768;
   const cam=new THREE.PerspectiveCamera(34,innerWidth/innerHeight,0.1,100);
-  cam.position.set(0,0,mob?9.2:C.z);
-  cam.near=0.1; cam.far=100; cam.updateProjectionMatrix();
+  cam.position.set(0,0,mob?11.8:C.z);
   const ren=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
   ren.setSize(innerWidth,innerHeight);
   ren.setPixelRatio(Math.min(devicePixelRatio,1.4));
@@ -35,7 +34,7 @@ export default function Page(){
 
   if((navigator as any).gpu){
     (navigator as any).gpu.requestAdapter({powerPreference:'high-performance'})
- .then((a:any)=>{ if(a) setMod(s=>({...s,webgpu:true})); });
+.then((a:any)=>{ if(a) setMod(s=>({...s,webgpu:true})); });
   }
 
   let ws:any=null;
@@ -75,7 +74,7 @@ export default function Page(){
   const l1=new THREE.PointLight(0x88eeff,16,6); l1.position.set(0,0,0); sc.add(l1);
   const l2=new THREE.PointLight(0xffffff,10,4); l2.position.set(0,0,1.2); sc.add(l2);
 
-  const g=new THREE.Group(); g.scale.setScalar(1.0); sc.add(g);
+  const g=new THREE.Group(); g.scale.setScalar(0.88); sc.add(g);
 
   const mat=new THREE.MeshPhysicalMaterial({
     color:0xd4dee6, transparent:true, opacity:C.op,
@@ -114,7 +113,7 @@ export default function Page(){
   const ignite=()=>{
     if(ign) return; ign=true; setOn(true);
     bloom.strength=0.32; m1.emissiveIntensity=C.e1; m2.emissiveIntensity=C.e2;
-    l1.intensity=16; l2.intensity=10; ren.toneMappingExposure=0.82;
+    l1.intensity=16; l2.intensity=10;
   };
   const onPointer=()=>{ presence=1; ignite(); };
   addEventListener('pointermove',onPointer);
@@ -139,7 +138,7 @@ export default function Page(){
     bloom.strength=0.32+bMod*0.18;
     const rot=0.00038*(0.5+prop+presence*0.5);
     const breath=1.0+Math.sin(t*0.82)*0.028+Math.sin(t*1.42)*0.012+presence*0.06;
-    g.scale.setScalar(breath);
+    g.scale.setScalar(0.88*breath);
     g.rotation.y+=rot; g.rotation.x+=rot*0.12;
     inn.rotation.y-=rot*0.32; inn2.rotation.y+=rot*0.52;
     pts.rotation.y+=0.00028; presence*=0.992;
@@ -155,11 +154,11 @@ export default function Page(){
   <div style={{width:'100%',height:'100dvh',background:'#000',overflow:'hidden'}}>
     <div ref={ref} style={{position:'fixed',inset:0}}/>
     <div style={{position:'fixed',top:12,left:'50%',transform:'translateX(-50%)',background:on?'#88eef0':'#3dd598',color:'#000',padding:'8px 20px',borderRadius:999,fontSize:11,fontWeight:900,zIndex:10}}>
-      {on?`💎 V19.2.3.41 FIX Z10.2 ${dmxOn?'DMX WS':'DMX SYNTH'} ${Object.values(mod).filter(Boolean).length}/4`:'⚡ V19.2.3.41 FIX'}
+      {on?`💎 V19.2.3.42 RECUL 60% Z13.06 ${dmxOn?'DMX WS':'DMX SYNTH'} ${Object.values(mod).filter(Boolean).length}/4`:'⚡ V19.2.3.42 RECUL 60%'}
     </div>
     <div style={{position:'fixed',bottom:12,left:12,right:12,display:'flex',justifyContent:'center',zIndex:10}}>
       <div style={{padding:'8px 14px',borderRadius:999,background:'rgba(255,255,255,0.82)',color:'#000',fontSize:9,fontWeight:800,textAlign:'center'}}>
-        PROTOCOLS: DMX 512CH Art-Net 6454 sACN 5568 WS 8081 • WEBGPU WGSL 2.399963 156P • AUDIO FFT128 BEAT • MIDI MSC • OSC • ACEScg • WebXR
+        RECUL 60% Z8.16→Z13.06 SCALE 1.0→0.88 • DMX 512CH Art-Net 6454 sACN 5568 • WEBGPU 156P 2.399963
       </div>
     </div>
   </div>
