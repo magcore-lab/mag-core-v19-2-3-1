@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
@@ -5,11 +6,11 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-const C={midR:0.48,trans:0.92,ior:2.42,thick:0.52,op:0.94,R1:0.22,R2:0.11,e1:1.42,e2:2.24,z:16.32};
+const C={midR:0.48,trans:0.92,ior:2.42,thick:0.48,op:0.88,R1:0.22,R2:0.11,e1:1.12,e2:1.48,z:10.2};
 
 export default function Page(){
  const ref=useRef<HTMLDivElement>(null);
- const dmx=useRef({ch:new Uint8Array(513),c1:127,c2:88,c3:142,c10:178});
+ const dmx=useRef({ch:new Uint8Array(513),c1:127,c2:72,c3:142,c10:127});
  const [on,setOn]=useState(false);
  const [dmxOn,setDmxOn]=useState(false);
  const [mod,setMod]=useState({webgpu:false,audio:false,midi:false,osc:true});
@@ -17,19 +18,18 @@ export default function Page(){
  useEffect(()=>{
   const mnt=ref.current!;
   const sc=new THREE.Scene(); sc.background=new THREE.Color(0x000000);
-  sc.fog=new THREE.FogExp2(0x000010,0.042);
   const mob=innerWidth<768;
   const cam=new THREE.PerspectiveCamera(34,innerWidth/innerHeight,0.1,100);
-  cam.position.set(0,0,mob?14.2:C.z);
+  cam.position.set(0,0,mob?9.4:C.z);
   const ren=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
   ren.setSize(innerWidth,innerHeight);
-  ren.setPixelRatio(Math.min(devicePixelRatio,1.4));
+  ren.setPixelRatio(Math.min(devicePixelRatio,1.2));
   ren.toneMapping=THREE.ACESFilmicToneMapping;
-  ren.toneMappingExposure=0.92;
+  ren.toneMappingExposure=0.82;
   mnt.appendChild(ren.domElement);
   const comp=new EffectComposer(ren);
   comp.addPass(new RenderPass(sc,cam));
-  const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),0.52,0.48,0.82);
+  const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),0.38,0.52,0.88);
   comp.addPass(bloom);
 
   if((navigator as any).gpu){
@@ -40,7 +40,7 @@ export default function Page(){
   let ws:any=null;
   const arr=new Uint8Array(513);
   for(let i=1;i<513;i++) arr[i]=0;
-  arr[1]=127; arr[2]=88; arr[3]=142; arr[10]=178;
+  arr[1]=127; arr[2]=72; arr[3]=142; arr[10]=127;
   try{
     ws=new WebSocket('ws://localhost:8081');
     ws.onopen=()=>{ setDmxOn(true); setMod(s=>({...s,osc:true})); };
@@ -68,58 +68,52 @@ export default function Page(){
   }catch{}
   try{ if((navigator as any).requestMIDIAccess) (navigator as any).requestMIDIAccess().then(()=>setMod(s=>({...s,midi:true}))); }catch{}
 
-  sc.add(new THREE.AmbientLight(0xffffff,0.62));
-  const key=new THREE.DirectionalLight(0xffffff,1.12); key.position.set(4,6,5); sc.add(key);
-  const fill=new THREE.DirectionalLight(0x88ccff,0.52); fill.position.set(-4,-2,4); sc.add(fill);
-  const l1=new THREE.PointLight(0x88eeff,32,8); l1.position.set(0,0,0); sc.add(l1);
-  const l2=new THREE.PointLight(0xffffff,22,5.5); l2.position.set(0,0,1.4); sc.add(l2);
+  sc.add(new THREE.AmbientLight(0xffffff,0.52));
+  const key=new THREE.DirectionalLight(0xffffff,0.88); key.position.set(4,6,5); sc.add(key);
+  const fill=new THREE.DirectionalLight(0x88ccff,0.38); fill.position.set(-4,-2,4); sc.add(fill);
+  const l1=new THREE.PointLight(0x88eeff,18,6); l1.position.set(0,0,0); sc.add(l1);
+  const l2=new THREE.PointLight(0xffffff,12,4); l2.position.set(0,0,1.2); sc.add(l2);
 
-  const g=new THREE.Group(); g.scale.setScalar(0.72); sc.add(g);
+  const g=new THREE.Group(); g.scale.setScalar(1.0); sc.add(g);
 
   const mat=new THREE.MeshPhysicalMaterial({
-    color:0xd8eaf2, transparent:true, opacity:C.op,
+    color:0xd4dee6, transparent:true, opacity:C.op,
     transmission:C.trans, thickness:C.thick, ior:C.ior,
-    roughness:0.08, metalness:0.02, clearcoat:1.0, clearcoatRoughness:0.08,
-    envMapIntensity:1.28, flatShading:true, side:THREE.DoubleSide
+    roughness:0.12, metalness:0.02, clearcoat:1.0, clearcoatRoughness:0.08,
+    envMapIntensity:1.08, flatShading:true, side:THREE.DoubleSide
   });
   const diam=new THREE.Mesh(new THREE.IcosahedronGeometry(C.midR,1),mat); g.add(diam);
 
   const m1=new THREE.MeshPhysicalMaterial({
-    color:0x88ccdd, emissive:0x44bbdd, emissiveIntensity:C.e1,
-    transmission:0.92, thickness:0.38, ior:2.12, roughness:0.08,
-    transparent:true, opacity:0.72
+    color:0x88bbcc, emissive:0x44aacc, emissiveIntensity:C.e1,
+    transmission:0.88, thickness:0.32, ior:2.0, roughness:0.12,
+    transparent:true, opacity:0.62
   });
   const inn=new THREE.Mesh(new THREE.IcosahedronGeometry(C.R1,2),m1); g.add(inn);
 
   const m2=new THREE.MeshPhysicalMaterial({
-    color:0x88eeff, emissive:0x66ddff, emissiveIntensity:C.e2,
-    transmission:0.88, thickness:0.28, ior:2.02, roughness:0.06,
-    transparent:true, opacity:0.62
+    color:0x88ddff, emissive:0x66ccff, emissiveIntensity:C.e2,
+    transmission:0.82, thickness:0.24, ior:1.9, roughness:0.08,
+    transparent:true, opacity:0.52
   });
   const inn2=new THREE.Mesh(new THREE.IcosahedronGeometry(C.R2,2),m2); g.add(inn2);
 
   const geo=new THREE.BufferGeometry(); const pos=new Float32Array(156*3);
   for(let i=0;i<156;i++){
-    const th=i*2.399963, ph=Math.acos(1-2*i/156), r=3.2+Math.random()*5.8;
+    const th=i*2.399963, ph=Math.acos(1-2*i/156), r=2.8+Math.random()*4.2;
     pos[i*3]=Math.sin(ph)*Math.cos(th)*r;
     pos[i*3+1]=Math.sin(ph)*Math.sin(th)*r;
     pos[i*3+2]=Math.cos(ph)*r;
   }
   geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
-  const pMat=new THREE.PointsMaterial({color:0x88eef0,size:0.052,transparent:true,opacity:0.82,sizeAttenuation:true});
+  const pMat=new THREE.PointsMaterial({color:0x88eef0,size:0.042,transparent:true,opacity:0.68,sizeAttenuation:true});
   const pts=new THREE.Points(geo,pMat); sc.add(pts);
-
-  const qGeo=new THREE.BufferGeometry(); const qPos=new Float32Array(72*3);
-  for(let i=0;i<72;i++){ const a=i/72*Math.PI*2; qPos[i*3]=Math.cos(a)*2.8; qPos[i*3+1]=Math.sin(a)*2.8; qPos[i*3+2]=Math.sin(a*4)*0.6; }
-  qGeo.setAttribute('position',new THREE.BufferAttribute(qPos,3));
-  const qMat=new THREE.PointsMaterial({color:0x44aaff,size:0.038,transparent:true,opacity:0.52});
-  const qField=new THREE.Points(qGeo,qMat); g.add(qField);
 
   let ign=false, presence=0;
   const ignite=()=>{
     if(ign) return; ign=true; setOn(true);
-    bloom.strength=0.52; m1.emissiveIntensity=C.e1; m2.emissiveIntensity=C.e2;
-    l1.intensity=32; l2.intensity=22; ren.toneMappingExposure=0.92;
+    bloom.strength=0.38; m1.emissiveIntensity=C.e1; m2.emissiveIntensity=C.e2;
+    l1.intensity=18; l2.intensity=12;
   };
   const onPointer=()=>{ presence=1; ignite(); };
   addEventListener('pointermove',onPointer);
@@ -129,7 +123,7 @@ export default function Page(){
 
   let t=0,raf=0;
   const synth=(tt:number)=>{
-    const c1=127+Math.sin(tt*0.6)*42, c2=88+Math.sin(tt*0.4)*32, c3=142+Math.sin(tt*0.8)*32, c10=178+Math.sin(tt*0.3)*22;
+    const c1=127+Math.sin(tt*0.6)*42, c2=72+Math.sin(tt*0.4)*28, c3=142+Math.sin(tt*0.8)*32, c10=127+Math.sin(tt*0.3)*18;
     if(!ws||ws.readyState!==1){
       dmx.current.ch[1]=Math.floor(c1); dmx.current.ch[2]=Math.floor(c2);
       dmx.current.ch[3]=Math.floor(c3); dmx.current.ch[10]=Math.floor(c10);
@@ -138,17 +132,16 @@ export default function Page(){
   };
   const anim=()=>{
     raf=requestAnimationFrame(anim); t+=0.016; synth(t);
-    const master=(dmx.current.c10||178)/255;
-    const prop=(dmx.current.c1/255)*0.82*master;
-    const bMod=(dmx.current.c2/255)*0.32;
-    bloom.strength=0.52+bMod*0.32;
-    const rot=0.00052*(0.5+prop+presence*0.8);
-    const breath=1.0+Math.sin(t*0.88)*0.042+Math.sin(t*1.62)*0.018+presence*0.12;
-    g.scale.setScalar(0.72*breath);
-    g.rotation.y+=rot; g.rotation.x+=rot*0.18;
-    inn.rotation.y-=rot*0.42; inn2.rotation.y+=rot*0.68;
-    pts.rotation.y+=0.00042; qField.rotation.y-=0.00052; qField.rotation.x+=0.00018;
-    presence*=0.988;
+    const master=(dmx.current.c10||127)/255;
+    const prop=(dmx.current.c1/255)*0.72*master;
+    const bMod=(dmx.current.c2/255)*0.22;
+    bloom.strength=0.38+bMod*0.22;
+    const rot=0.00042*(0.5+prop+presence*0.6);
+    const breath=1.0+Math.sin(t*0.88)*0.032+Math.sin(t*1.52)*0.012+presence*0.08;
+    g.scale.setScalar(breath);
+    g.rotation.y+=rot; g.rotation.x+=rot*0.12;
+    inn.rotation.y-=rot*0.32; inn2.rotation.y+=rot*0.52;
+    pts.rotation.y+=0.00032; presence*=0.992;
     comp.render();
   }; anim();
 
@@ -161,12 +154,7 @@ export default function Page(){
   <div style={{width:'100%',height:'100dvh',background:'#000',overflow:'hidden'}}>
     <div ref={ref} style={{position:'fixed',inset:0}}/>
     <div style={{position:'fixed',top:12,left:'50%',transform:'translateX(-50%)',background:on?'#88eef0':'#3dd598',color:'#000',padding:'8px 20px',borderRadius:999,fontSize:11,fontWeight:900,zIndex:10}}>
-      {on?`💎 V19.2.3.43 ENERGY ON PRESENCE Z16.32 ${dmxOn?'DMX WS':'DMX SYNTH'} ${Object.values(mod).filter(Boolean).length}/4`:'⚡ V19.2.3.43 ENERGY ON'}
-    </div>
-    <div style={{position:'fixed',bottom:12,left:12,right:12,display:'flex',justifyContent:'center',zIndex:10}}>
-      <div style={{padding:'8px 14px',borderRadius:999,background:'rgba(255,255,255,0.82)',color:'#000',fontSize:9,fontWeight:800,textAlign:'center'}}>
-        ENERGY ON MODE PRESENCE • ZOOM GLOBALE 60% Z10.2→Z16.32 • DMX 512CH • QUANTIQUE 156P+72L • WEBGPU • CINEMA ACEScg
-      </div>
+      {on?`💎 V19.2.3.44 STABLE Z10.2 ${dmxOn?'DMX WS':'DMX SYNTH'} ${Object.values(mod).filter(Boolean).length}/4`:'⚡ V19.2.3.44 STABLE'}
     </div>
   </div>
  );
