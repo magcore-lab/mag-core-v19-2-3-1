@@ -6,11 +6,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-const CORE={
-  midR:0.576, innerR1:0.264, innerR2:0.132,
-  trans:0.995, ior:2.65, thick:0.624, op:0.88,
-  e1:2.8, e2:3.4, camZ:8.16
-};
+const C={midR:0.576,R1:0.264,R2:0.132,trans:0.995,ior:2.65,thick:0.624,op:0.88,e1:2.8,e2:3.4,z:8.16};
 
 export default function Page(){
  const ref=useRef<HTMLDivElement>(null);
@@ -20,17 +16,17 @@ export default function Page(){
  const [mod,setMod]=useState({webgpu:false,audio:false,midi:false,osc:true});
 
  useEffect(()=>{
-  const mount=ref.current!;
+  const mnt=ref.current!;
   const sc=new THREE.Scene(); sc.background=new THREE.Color(0x000000);
   const mob=innerWidth<768;
   const cam=new THREE.PerspectiveCamera(34,innerWidth/innerHeight,0.1,100);
-  cam.position.set(0,0,mob?7.44:CORE.camZ);
+  cam.position.set(0,0,mob?7.44:C.z);
   const ren=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
   ren.setSize(innerWidth,innerHeight);
   ren.setPixelRatio(Math.min(devicePixelRatio,1.2));
   ren.toneMapping=THREE.ACESFilmicToneMapping;
   ren.toneMappingExposure=0.92;
-  mount.appendChild(ren.domElement);
+  mnt.appendChild(ren.domElement);
   const comp=new EffectComposer(ren);
   comp.addPass(new RenderPass(sc,cam));
   const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),0.28,0.62,0.92);
@@ -38,24 +34,24 @@ export default function Page(){
 
   if((navigator as any).gpu){
     (navigator as any).gpu.requestAdapter({powerPreference:'high-performance'})
-     .then((a:any)=>{ if(a) setMod(m=>({...m,webgpu:true})); });
+    .then((a:any)=>{ if(a) setMod(s=>({...s,webgpu:true})); });
   }
 
   let ws:any=null;
-  const chArr=new Uint8Array(513);
-  for(let i=1;i<513;i++) chArr[i]=0;
-  chArr[1]=110; chArr[2]=62; chArr[3]=142; chArr[10]=178;
+  const arr=new Uint8Array(513);
+  for(let i=1;i<513;i++) arr[i]=0;
+  arr[1]=110; arr[2]=62; arr[3]=142; arr[10]=178;
   try{
     ws=new WebSocket('ws://localhost:8081');
-    ws.onopen=()=>{ setDmxOn(true); setMod(m=>({...m,osc:true})); };
+    ws.onopen=()=>{ setDmxOn(true); setMod(s=>({...s,osc:true})); };
     ws.onmessage=(e:any)=>{
       try{
         const msg=JSON.parse(e.data);
         if(msg.channels){
           const c=msg.channels;
           const cl=(v:number)=>Math.max(0,Math.min(255,Math.floor(Number(v)||0)));
-          for(let i=0;i<512&&i<c.length;i++){ chArr[i+1]=cl(c[i]); dmx.current.ch[i+1]=cl(c[i]); }
-          dmx.current={ch:chArr,c1:cl(c[0]),c2:cl(c[1]),c3:cl(c[2]),c10:cl(c[9])};
+          for(let i=0;i<512&&i<c.length;i++){ arr[i+1]=cl(c[i]); dmx.current.ch[i+1]=cl(c[i]); }
+          dmx.current={ch:arr,c1:cl(c[0]),c2:cl(c[1]),c3:cl(c[2]),c10:cl(c[9])};
         }
       }catch{}
     };
@@ -68,39 +64,39 @@ export default function Page(){
     const ctx=new AC(); const an=ctx.createAnalyser(); an.fftSize=256;
     const o=ctx.createOscillator(); o.frequency.value=110;
     o.connect(an); an.connect(ctx.destination); o.start();
-    const lp=()=>{ an.getByteFrequencyData(new Uint8Array(128)); setMod(m=>({...m,audio:true})); requestAnimationFrame(lp); }; lp();
+    const lp=()=>{ an.getByteFrequencyData(new Uint8Array(128)); setMod(s=>({...s,audio:true})); requestAnimationFrame(lp); }; lp();
   }catch{}
-  try{ if((navigator as any).requestMIDIAccess) (navigator as any).requestMIDIAccess().then(()=>setMod(m=>({...m,midi:true}))); }catch{}
+  try{ if((navigator as any).requestMIDIAccess) (navigator as any).requestMIDIAccess().then(()=>setMod(s=>({...s,midi:true}))); }catch{}
 
   sc.add(new THREE.AmbientLight(0xffffff,0.62));
-  const k=new THREE.DirectionalLight(0xffffff,0.88); k.position.set(4,6,5); sc.add(k);
-  const f=new THREE.DirectionalLight(0xaaccff,0.38); f.position.set(-4,-2,4); sc.add(f);
+  const key=new THREE.DirectionalLight(0xffffff,0.88); key.position.set(4,6,5); sc.add(key);
+  const fill=new THREE.DirectionalLight(0xaaccff,0.38); fill.position.set(-4,-2,4); sc.add(fill);
   const l1=new THREE.PointLight(0x88ffff,28,6); l1.position.set(0,0,0); sc.add(l1);
   const l2=new THREE.PointLight(0xffffff,18,4); l2.position.set(0,0,0.8); sc.add(l2);
 
   const g=new THREE.Group(); g.scale.setScalar(1.2); sc.add(g);
 
   const mat=new THREE.MeshPhysicalMaterial({
-    color:0xe8eef2, transparent:true, opacity:CORE.op,
-    transmission:CORE.trans, thickness:CORE.thick, ior:CORE.ior,
+    color:0xe8eef2, transparent:true, opacity:C.op,
+    transmission:C.trans, thickness:C.thick, ior:C.ior,
     roughness:0.08, metalness:0, clearcoat:1.0, clearcoatRoughness:0.08,
     envMapIntensity:1.18, flatShading:true, side:THREE.DoubleSide
   });
-  const diam=new THREE.Mesh(new THREE.IcosahedronGeometry(CORE.midR,1),mat); g.add(diam);
+  const diam=new THREE.Mesh(new THREE.IcosahedronGeometry(C.midR,1),mat); g.add(diam);
 
   const m1=new THREE.MeshPhysicalMaterial({
-    color:0xc8d8e8, emissive:0x88ddff, emissiveIntensity:CORE.e1,
+    color:0xc8d8e8, emissive:0x88ddff, emissiveIntensity:C.e1,
     transmission:0.92, thickness:0.42, ior:2.1, roughness:0.12,
     transparent:true, opacity:0.58
   });
-  const inn=new THREE.Mesh(new THREE.IcosahedronGeometry(CORE.innerR1,2),m1); g.add(inn);
+  const inn=new THREE.Mesh(new THREE.IcosahedronGeometry(C.R1,2),m1); g.add(inn);
 
   const m2=new THREE.MeshPhysicalMaterial({
-    color:0xaaddff, emissive:0x88eeff, emissiveIntensity:CORE.e2,
+    color:0xaaddff, emissive:0x88eeff, emissiveIntensity:C.e2,
     transmission:0.88, thickness:0.32, ior:2.0, roughness:0.08,
     transparent:true, opacity:0.62
   });
-  const inn2=new THREE.Mesh(new THREE.IcosahedronGeometry(CORE.innerR2,2),m2); g.add(inn2);
+  const inn2=new THREE.Mesh(new THREE.IcosahedronGeometry(C.R2,2),m2); g.add(inn2);
 
   const geo=new THREE.BufferGeometry(); const pos=new Float32Array(200*3);
   for(let i=0;i<200;i++){
@@ -116,7 +112,7 @@ export default function Page(){
   let ign=false;
   const ignite=()=>{
     if(ign) return; ign=true; setOn(true);
-    bloom.strength=0.28; m1.emissiveIntensity=CORE.e1; m2.emissiveIntensity=CORE.e2;
+    bloom.strength=0.28; m1.emissiveIntensity=C.e1; m2.emissiveIntensity=C.e2;
     l1.intensity=28; l2.intensity=18;
   };
   setTimeout(ignite,180);
@@ -144,16 +140,17 @@ export default function Page(){
     g.rotation.y+=rot; inn.rotation.y-=rot*0.42; inn2.rotation.y+=rot*0.62;
     pts.rotation.y+=0.00018; comp.render();
   }; anim();
+
   const onR=()=>{ cam.aspect=innerWidth/innerHeight; cam.updateProjectionMatrix(); ren.setSize(innerWidth,innerHeight); comp.setSize(innerWidth,innerHeight); };
   addEventListener('resize',onR);
-  return()=>{ cancelAnimationFrame(raf); removeEventListener('resize',onR); mount.removeChild(ren.domElement); ren.dispose(); if(ws) ws.close(); };
+  return()=>{ cancelAnimationFrame(raf); removeEventListener('resize',onR); mnt.removeChild(ren.domElement); ren.dispose(); if(ws) ws.close(); };
  },[]);
 
  return(
   <div style={{width:'100%',height:'100dvh',background:'#000',overflow:'hidden'}}>
     <div ref={ref} style={{position:'fixed',inset:0}}/>
     <div style={{position:'fixed',top:12,left:'50%',transform:'translateX(-50%)',background:on?'#88eef0':'#3dd598',color:'#000',padding:'8px 20px',borderRadius:999,fontSize:11,fontWeight:900,zIndex:10}}>
-      {on?`💎 V19.2.3.37 INTERIEUR Z8.16 ${dmxOn?'DMX WS':'DMX SYNTH'} ${Object.values(mod).filter(Boolean).length}/4 MODS`:'⚡ V19.2.3.37'}
+      {on?`💎 V19.2.3.37 Z8.16 ${dmxOn?'DMX WS':'DMX SYNTH'} ${Object.values(mod).filter(Boolean).length}/4`:'⚡ V19.2.3.37'}
     </div>
   </div>
  );
