@@ -6,7 +6,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-const C = { midR: 0.48, trans: 0.86, ior: 2.42, thick: 0.38, op: 0.82, R1: 0.22, R2: 0.11, e1: 0.042, e2: 0.078, z: 6.12 };
+const C = { midR: 0.48, trans: 0.86, ior: 2.42, thick: 0.42, op: 0.84, R1: 0.22, R2: 0.11, e1: 0.048, e2: 0.082, z: 6.12 };
 
 export default function Page() {
   const ref = useRef<HTMLDivElement>(null);
@@ -27,11 +27,11 @@ export default function Page() {
     ren.setSize((window as any).innerWidth, (window as any).innerHeight);
     ren.setPixelRatio(Math.min((window as any).devicePixelRatio, 1.2));
     ren.toneMapping = THREE.ACESFilmicToneMapping;
-    ren.toneMappingExposure = 0.52;
+    ren.toneMappingExposure = 0.54;
     mnt.appendChild(ren.domElement);
     const comp = new EffectComposer(ren);
     comp.addPass(new RenderPass(sc, cam));
-    const bloom = new UnrealBloomPass(new THREE.Vector2((window as any).innerWidth, (window as any).innerHeight), 0.18, 0.62, 0.88);
+    const bloom = new UnrealBloomPass(new THREE.Vector2((window as any).innerWidth, (window as any).innerHeight), 0.22, 0.68, 0.86);
     comp.addPass(bloom);
 
     if ((navigator as any).gpu) {
@@ -69,52 +69,52 @@ export default function Page() {
     } catch {}
     try { if ((navigator as any).requestMIDIAccess) (navigator as any).requestMIDIAccess().then(() => setMod(s => ({...s, midi: true }))); } catch {}
 
-    sc.add(new THREE.AmbientLight(0xe8f0ff, 0.12));
-    const l1 = new THREE.PointLight(0xffffff, 1.22, 3.2); l1.position.set(0, 0, 0); sc.add(l1);
-    const l2 = new THREE.PointLight(0xc8d8ff, 0.62, 2.2); l2.position.set(0.12, 0.08, 0.12); sc.add(l2);
+    sc.add(new THREE.AmbientLight(0x334466, 0.22));
+    const l1 = new THREE.PointLight(0x3355ff, 1.42, 3.2); l1.position.set(0, 0, 0); sc.add(l1);
+    const l2 = new THREE.PointLight(0x1122aa, 0.72, 2.2); l2.position.set(0.12, 0.08, 0.12); sc.add(l2);
 
     const g = new THREE.Group(); g.scale.setScalar(1.0); sc.add(g);
 
     const mat = new THREE.MeshPhysicalMaterial({
-      color: 0xd8e4f8,
+      color: 0x6a8ec2,
       transparent: true,
       opacity: C.op,
       transmission: C.trans,
       thickness: C.thick,
       ior: C.ior,
-      roughness: 0.08,
-      metalness: 0.02,
-      clearcoat: 0.82,
-      clearcoatRoughness: 0.12,
-      envMapIntensity: 1.24,
+      roughness: 0.12,
+      metalness: 0.04,
+      clearcoat: 0.72,
+      clearcoatRoughness: 0.18,
+      envMapIntensity: 1.22,
       flatShading: true,
       side: THREE.DoubleSide
     } as any);
     const diam = new THREE.Mesh(new THREE.IcosahedronGeometry(C.midR, 1), mat); g.add(diam);
 
     const m1 = new THREE.MeshPhysicalMaterial({
-      color: 0xe8f0ff,
-      emissive: 0x88aaff,
+      color: 0x2a4a88,
+      emissive: 0x2244aa,
       emissiveIntensity: C.e1,
-      transmission: 0.82,
+      transmission: 0.72,
       thickness: 0.32,
-      ior: 2.2,
-      roughness: 0.12,
+      ior: 2.12,
+      roughness: 0.18,
       transparent: true,
       opacity: 0.42
     } as any);
     const inn = new THREE.Mesh(new THREE.IcosahedronGeometry(C.R1, 2), m1); g.add(inn);
 
     const m2 = new THREE.MeshPhysicalMaterial({
-      color: 0xf0f6ff,
-      emissive: 0xaaccff,
+      color: 0x4466aa,
+      emissive: 0x3366cc,
       emissiveIntensity: C.e2,
-      transmission: 0.78,
+      transmission: 0.68,
       thickness: 0.26,
-      ior: 2.2,
-      roughness: 0.08,
+      ior: 2.12,
+      roughness: 0.14,
       transparent: true,
-      opacity: 0.36
+      opacity: 0.32
     } as any);
     const inn2 = new THREE.Mesh(new THREE.IcosahedronGeometry(C.R2, 2), m2); g.add(inn2);
 
@@ -122,16 +122,17 @@ export default function Page() {
     const droneGroup = new THREE.Group(); sc.add(droneGroup);
     for (let i = 0; i < 6; i++) {
       const drone = new THREE.Group();
-      const body = new THREE.Mesh(new THREE.SphereGeometry(0.038, 12, 12), new THREE.MeshPhysicalMaterial({ color: 0xffffff, emissiveIntensity: 0.82, roughness: 0.08 } as any));
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.032, 12, 12), new THREE.MeshPhysicalMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.72, roughness: 0.12 } as any));
       drone.add(body);
-      const spot = new THREE.SpotLight(0xffffff, 0, 1.8, Math.PI / 6, 0.42, 0.82);
+      const spot = new THREE.SpotLight(0xffffff, 0, 1.42, Math.PI / 7, 0.52, 0.82);
       spot.position.set(0, 0, 0); spot.target = g; sc.add(spot.target); drone.add(spot);
-      const beamGeo = new THREE.CylinderGeometry(0.002, 0.12, 0.92, 12, 1, true);
-      const beam = new THREE.Mesh(beamGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.0, side: THREE.DoubleSide }));
+      const beamMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.0, side: THREE.DoubleSide, depthWrite: false });
+      const beamGeo = new THREE.CylinderGeometry(0.001, 0.088, 0.92, 16, 1, true);
+      const beam = new THREE.Mesh(beamGeo, beamMat);
       beam.rotation.x = Math.PI / 2;
       beam.position.set(0, 0, 0.46);
       drone.add(beam);
-      const satLight = new THREE.PointLight(0xffffff, 0.82, 1.2); satLight.position.set(0, 0, 0); drone.add(satLight);
+      const satLight = new THREE.PointLight(0xffffff, 0.62, 1.0); satLight.position.set(0, 0, 0); drone.add(satLight);
       (drone as any).userData = { ang: i * 60 * Math.PI / 180, baseR: 0.92, spot, beam, body, satLight, idx: i };
       drones.push(drone); droneGroup.add(drone);
     }
@@ -142,15 +143,15 @@ export default function Page() {
       pos[i * 3] = Math.sin(ph) * Math.cos(th) * r; pos[i * 3 + 1] = Math.sin(ph) * Math.sin(th) * r; pos[i * 3 + 2] = Math.cos(ph) * r;
     }
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    const pMat = new THREE.PointsMaterial({ color: 0x8899bb, size: 0.022, transparent: true, opacity: 0.22, sizeAttenuation: true });
+    const pMat = new THREE.PointsMaterial({ color: 0x6688bb, size: 0.022, transparent: true, opacity: 0.22, sizeAttenuation: true });
     const pts = new THREE.Points(geo, pMat); sc.add(pts);
 
     let ign = false, presence = 0;
     const ignite = () => {
       if (ign) return; ign = true; setOn(true);
-      bloom.strength = 0.18; (m1 as any).emissiveIntensity = C.e1; (m2 as any).emissiveIntensity = C.e2;
-      l1.intensity = 1.22; l2.intensity = 0.62;
-      drones.forEach((d: any) => { d.userData.spot.intensity = 2.2; d.userData.beam.material.opacity = 0.18; d.userData.body.material.emissiveIntensity = 0.82; d.userData.satLight.intensity = 0.82; });
+      bloom.strength = 0.22; (m1 as any).emissiveIntensity = C.e1; (m2 as any).emissiveIntensity = C.e2;
+      l1.intensity = 1.42; l2.intensity = 0.72;
+      drones.forEach((d: any) => { d.userData.spot.intensity = 1.82; d.userData.beam.material.opacity = 0.12; d.userData.body.material.emissiveIntensity = 0.72; d.userData.satLight.intensity = 0.62; });
     };
     const onPointer = () => { presence = 1; ignite(); };
     (window as any).addEventListener('pointermove', onPointer);
@@ -173,7 +174,7 @@ export default function Page() {
       const master = (dmx.current.c10 || 12) / 255;
       const prop = (dmx.current.c1 / 255) * 0.32 * master;
       const bMod = (dmx.current.c2 / 255) * 0.08;
-      bloom.strength = 0.18 + bMod * 0.06 + presence * 0.08;
+      bloom.strength = 0.22 + bMod * 0.06 + presence * 0.08;
       const rot = 0.00024 * (0.5 + prop + presence * 0.42);
       const breath = 1.0 + Math.sin(t * 0.72) * 0.016 + Math.sin(t * 1.22) * 0.006 + presence * 0.032;
       g.scale.setScalar(breath);
@@ -184,24 +185,24 @@ export default function Page() {
       const fogColor = new THREE.Color().lerpColors(new THREE.Color(0x080c14), new THREE.Color(0x0e1420), ecart);
       (sc as any).fog = new THREE.FogExp2(fogColor, 0.014 + ecart * 0.008);
       (sc as any).background = new THREE.Color().lerpColors(new THREE.Color(0x05070a), new THREE.Color(0x0a0e14), ecart);
-      ren.toneMappingExposure = 0.52 + master * 0.08 + presence * 0.06;
+      ren.toneMappingExposure = 0.54 + master * 0.08 + presence * 0.06;
       drones.forEach((d: any, idx: number) => {
         const ch = dmx.current.ch[21 + idx] || 88;
-        const intensity = (ch / 255) * 2.4 + presence * 0.82;
+        const intensity = (ch / 255) * 1.82 + presence * 0.62;
         const ang = d.userData.ang + t * 0.18 + idx * 0.08 + prop * 0.62;
         const r = d.userData.baseR + Math.sin(t * 0.8 + idx) * 0.04 + presence * 0.08;
         const y = Math.sin(t * 0.52 + idx * 0.8) * 0.12 + presence * 0.04;
         d.position.set(Math.cos(ang) * r, y, Math.sin(ang) * r);
         d.lookAt(g.position);
         d.userData.spot.intensity = intensity;
-        d.userData.beam.material.opacity = 0.12 + intensity * 0.032;
-        d.userData.body.material.emissiveIntensity = 0.82 + intensity * 0.12;
-        d.userData.satLight.intensity = 0.82 + intensity * 0.12;
+        d.userData.beam.material.opacity = 0.08 + intensity * 0.042;
+        d.userData.body.material.emissiveIntensity = 0.72 + intensity * 0.12;
+        d.userData.satLight.intensity = 0.62 + intensity * 0.12;
         const dist = d.position.distanceTo(g.position);
-        const gemmo = Math.max(0, 1 - dist / 1.8) * 0.42;
-        (mat as any).envMapIntensity = 1.24 + gemmo + presence * 0.22;
-        (m1 as any).emissiveIntensity = C.e1 + gemmo * 0.08;
-        (m2 as any).emissiveIntensity = C.e2 + gemmo * 0.12;
+        const gemmo = Math.max(0, 1 - dist / 1.8) * 0.32;
+        (mat as any).envMapIntensity = 1.22 + gemmo + presence * 0.18;
+        (m1 as any).emissiveIntensity = C.e1 + gemmo * 0.06;
+        (m2 as any).emissiveIntensity = C.e2 + gemmo * 0.08;
       });
       pts.rotation.y += 0.00012; presence *= 0.992; comp.render();
     }; anim();
@@ -213,8 +214,8 @@ export default function Page() {
   return (
     <div style={{ width: '100%', height: '100dvh', background: '#05070a', overflow: 'hidden' }}>
       <div ref={ref} style={{ position: 'fixed', inset: 0 }} />
-      <div style={{ position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)', background: on? '#d8e4f8' : '#0a0a0a', color: '#000', padding: '8px 20px', borderRadius: 999, fontSize: 11, fontWeight: 900, zIndex: 10 }}>
-        {on? `💎 V19.2.3.53 FIX ALIGNE DIAMANT +4% STABLE Z6.12 ${dmxOn? 'DMX WS' : 'DMX SYNTH'} ${Object.values(mod).filter(Boolean).length}/4` : '⚡ V19.2.3.53 ALIGNE STABLE'}
+      <div style={{ position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)', background: on? '#6a8ec2' : '#0a0a0a', color: '#fff', padding: '8px 20px', borderRadius: 999, fontSize: 11, fontWeight: 900, zIndex: 10 }}>
+        {on? `💎 V19.2.3.54 BLEU RETOUR BEAMS REELS +4% STABLE Z6.12 ${dmxOn? 'DMX WS' : 'DMX SYNTH'} ${Object.values(mod).filter(Boolean).length}/4` : '⚡ V19.2.3.54 BLEU BEAMS REELS'}
       </div>
     </div>
   );
