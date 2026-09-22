@@ -6,11 +6,11 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-const C={midR:0.48,trans:0.92,ior:2.65,thick:0.42,op:0.94,R1:0.22,R2:0.11,e1:0.042,e2:0.082,z:6.12};
+const C={midR:0.48,trans:0.92,ior:2.65,thick:0.42,op:0.94,R1:0.22,R2:0.11,e1:0.052,e2:0.092,z:6.12};
 
 export default function Page(){
  const ref=useRef<HTMLDivElement>(null);
- const dmx=useRef({ch:new Uint8Array(513),c1:127,c2:32,c3:72,c10:8});
+ const dmx=useRef({ch:new Uint8Array(513),c1:127,c2:42,c3:72,c10:8});
  const [on,setOn]=useState(false);
  const [dmxOn,setDmxOn]=useState(false);
  const [mod,setMod]=useState({webgpu:false,audio:false,midi:false,osc:true});
@@ -18,7 +18,7 @@ export default function Page(){
  useEffect(()=>{
   const mnt=ref.current!;
   const sc=new THREE.Scene(); sc.background=new THREE.Color(0x000000);
-  sc.fog=new THREE.FogExp2(0x050505,0.028);
+  sc.fog=new THREE.FogExp2(0x080808,0.022);
   const mob=innerWidth<768;
   const cam=new THREE.PerspectiveCamera(34,innerWidth/innerHeight,0.1,100);
   cam.position.set(0,0,mob?5.2:C.z);
@@ -26,11 +26,11 @@ export default function Page(){
   ren.setSize(innerWidth,innerHeight);
   ren.setPixelRatio(Math.min(devicePixelRatio,1.2));
   ren.toneMapping=THREE.ACESFilmicToneMapping;
-  ren.toneMappingExposure=0.72;
+  ren.toneMappingExposure=0.78;
   mnt.appendChild(ren.domElement);
   const comp=new EffectComposer(ren);
   comp.addPass(new RenderPass(sc,cam));
-  const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),0.24,0.68,0.88);
+  const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),0.32,0.62,0.84);
   comp.addPass(bloom);
 
   if((navigator as any).gpu){
@@ -41,7 +41,7 @@ export default function Page(){
   let ws:any=null;
   const arr=new Uint8Array(513);
   for(let i=1;i<513;i++) arr[i]=0;
-  arr[1]=127; arr[2]=32; arr[3]=72; arr[10]=8;
+  arr[1]=127; arr[2]=42; arr[3]=72; arr[10]=8;
   try{
     ws=new WebSocket('ws://localhost:8081');
     ws.onopen=()=>{ setDmxOn(true); setMod(s=>({...s,osc:true})); };
@@ -69,64 +69,69 @@ export default function Page(){
   }catch{}
   try{ if((navigator as any).requestMIDIAccess) (navigator as any).requestMIDIAccess().then(()=>setMod(s=>({...s,midi:true}))); }catch{}
 
-  sc.add(new THREE.AmbientLight(0xffffff,0.08));
-  const l1=new THREE.PointLight(0xffffff,1.2,3.2); l1.position.set(0,0,0); sc.add(l1);
-  const l2=new THREE.PointLight(0xffffff,0.52,2.2); l2.position.set(0.12,0.08,0.12); sc.add(l2);
-  const l3=new THREE.PointLight(0xffffff,0.22,4); l3.position.set(-0.22,-0.18,0.22); sc.add(l3);
+  // LUMIERES BLANCHES - PREUVE SYSTEME OPERATIONNEL POLYVALENT
+  sc.add(new THREE.AmbientLight(0xffffff,0.12));
+  const l1=new THREE.PointLight(0xffffff,1.42,3.2); l1.position.set(0,0,0); sc.add(l1);
+  const l2=new THREE.PointLight(0xffffff,0.62,2.2); l2.position.set(0.12,0.08,0.12); sc.add(l2);
+  const key=new THREE.DirectionalLight(0xffffff,0.42); key.position.set(3,4,3); sc.add(key);
+  const fill=new THREE.DirectionalLight(0xffffff,0.22); fill.position.set(-3,-2,2); sc.add(fill);
 
   const g=new THREE.Group(); g.scale.setScalar(1.0); sc.add(g);
 
   const mat=new THREE.MeshPhysicalMaterial({
     color:0xffffff, transparent:true, opacity:C.op,
     transmission:C.trans, thickness:C.thick, ior:C.ior,
-    roughness:0.04, metalness:0.02, clearcoat:1.0, clearcoatRoughness:0.04,
-    envMapIntensity:1.88, flatShading:true, side:THREE.DoubleSide,
-    dispersion:0.18
+    roughness:0.02, metalness:0.0, clearcoat:1.0, clearcoatRoughness:0.02,
+    envMapIntensity:2.12, flatShading:true, side:THREE.DoubleSide,
+    dispersion:0.22
   });
   const diam=new THREE.Mesh(new THREE.IcosahedronGeometry(C.midR,1),mat); g.add(diam);
 
   const m1=new THREE.MeshPhysicalMaterial({
     color:0xffffff, emissive:0xffffff, emissiveIntensity:C.e1,
-    transmission:0.88, thickness:0.32, ior:2.65, roughness:0.04,
-    transparent:true, opacity:0.32
+    transmission:0.92, thickness:0.36, ior:2.65, roughness:0.02,
+    transparent:true, opacity:0.28
   });
   const inn=new THREE.Mesh(new THREE.IcosahedronGeometry(C.R1,2),m1); g.add(inn);
 
   const m2=new THREE.MeshPhysicalMaterial({
     color:0xffffff, emissive:0xffffff, emissiveIntensity:C.e2,
-    transmission:0.82, thickness:0.24, ior:2.65, roughness:0.02,
-    transparent:true, opacity:0.28
+    transmission:0.88, thickness:0.28, ior:2.65, roughness:0.01,
+    transparent:true, opacity:0.22
   });
   const inn2=new THREE.Mesh(new THREE.IcosahedronGeometry(C.R2,2),m2); g.add(inn2);
 
+  // DRONES SATELLITES RAPPROCHÉS - 0.62*1.15R = 0.713R + 1.15 = 1.38 autour noyau
   const drones:any[]=[]; const droneGroup=new THREE.Group(); sc.add(droneGroup);
   for(let i=0;i<6;i++){
+    const ang=i*60*Math.PI/180;
     const drone=new THREE.Group();
-    const body=new THREE.Mesh(new THREE.SphereGeometry(0.028,8,8),new THREE.MeshPhysicalMaterial({color:0xffffff,emissive:0xffffff,emissiveIntensity:1.2,transmission:0.92,ior:2.4}));
+    const body=new THREE.Mesh(new THREE.SphereGeometry(0.042,12,12),new THREE.MeshPhysicalMaterial({color:0xffffff,emissive:0xffffff,emissiveIntensity:1.42,transmission:0.88,ior:2.4,roughness:0.02}));
     drone.add(body);
-    const spot=new THREE.SpotLight(0xffffff,0,8,Math.PI/7,0.38,0.82);
+    const spot=new THREE.SpotLight(0xffffff,0,2.2,Math.PI/5,0.32,0.92);
     spot.position.set(0,0,0); spot.target=g; sc.add(spot.target); drone.add(spot);
-    const beam=new THREE.Mesh(new THREE.CylinderGeometry(0.0015,0.12,3.2,8),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.06}));
-    beam.rotation.x=Math.PI/2; beam.position.z=-1.6; drone.add(beam);
-    drone.userData={ang:i*60*Math.PI/180,baseR:2.8,spot,beam,body,idx:i};
+    const beam=new THREE.Mesh(new THREE.ConeGeometry(0.14,0.92,8),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.12}));
+    beam.rotation.x=Math.PI; beam.position.z=-0.46; drone.add(beam);
+    const satLight=new THREE.PointLight(0xffffff,1.2,1.8); satLight.position.set(0,0,0); drone.add(satLight);
+    drone.userData={ang,baseR:0.92,spot,beam,body,satLight,idx:i};
     drones.push(drone); droneGroup.add(drone);
   }
 
   const geo=new THREE.BufferGeometry(); const pos=new Float32Array(156*3);
   for(let i=0;i<156;i++){
-    const th=i*2.399963, ph=Math.acos(1-2*i/156), r=2.8+Math.random()*4.2;
+    const th=i*2.399963, ph=Math.acos(1-2*i/156), r=2.2+Math.random()*2.8;
     pos[i*3]=Math.sin(ph)*Math.cos(th)*r; pos[i*3+1]=Math.sin(ph)*Math.sin(th)*r; pos[i*3+2]=Math.cos(ph)*r;
   }
   geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
-  const pMat=new THREE.PointsMaterial({color:0xffffff,size:0.024,transparent:true,opacity:0.22,sizeAttenuation:true});
+  const pMat=new THREE.PointsMaterial({color:0xffffff,size:0.028,transparent:true,opacity:0.32,sizeAttenuation:true});
   const pts=new THREE.Points(geo,pMat); sc.add(pts);
 
   let ign=false, presence=0;
   const ignite=()=>{
     if(ign) return; ign=true; setOn(true);
-    bloom.strength=0.24; m1.emissiveIntensity=C.e1; m2.emissiveIntensity=C.e2;
-    l1.intensity=1.2; l2.intensity=0.52;
-    drones.forEach(d=>{ d.userData.spot.intensity=3.2; d.userData.beam.material.opacity=0.06; d.userData.body.material.emissiveIntensity=1.2; });
+    bloom.strength=0.32; m1.emissiveIntensity=C.e1; m2.emissiveIntensity=C.e2;
+    l1.intensity=1.42; l2.intensity=0.62;
+    drones.forEach(d=>{ d.userData.spot.intensity=4.2; d.userData.beam.material.opacity=0.12; d.userData.body.material.emissiveIntensity=1.42; d.userData.satLight.intensity=1.2; });
   };
   const onPointer=()=>{ presence=1; ignite(); };
   addEventListener('pointermove',onPointer); addEventListener('touchstart',onPointer);
@@ -134,43 +139,43 @@ export default function Page(){
 
   let t=0,raf=0;
   const synth=(tt:number)=>{
-    const c1=127+Math.sin(tt*0.6)*22, c2=32+Math.sin(tt*0.4)*12, c3=72+Math.sin(tt*0.8)*18, c10=8+Math.sin(tt*0.2)*1.5;
+    const c1=127+Math.sin(tt*0.6)*22, c2=42+Math.sin(tt*0.4)*12, c3=72+Math.sin(tt*0.8)*18, c10=8+Math.sin(tt*0.2)*1.5;
     if(!ws||ws.readyState!==1){
       dmx.current.ch[1]=Math.floor(c1); dmx.current.ch[2]=Math.floor(c2);
       dmx.current.ch[3]=Math.floor(c3); dmx.current.ch[10]=Math.floor(c10);
-      for(let i=0;i<6;i++){ dmx.current.ch[21+i]=Math.floor(92+Math.sin(tt*0.4+i)*28); }
+      for(let i=0;i<6;i++){ dmx.current.ch[21+i]=Math.floor(112+Math.sin(tt*0.6+i)*32); }
       dmx.current={ch:dmx.current.ch,c1:Math.floor(c1),c2:Math.floor(c2),c3:Math.floor(c3),c10:Math.floor(c10)};
     }
   };
   const anim=()=>{
     raf=requestAnimationFrame(anim); t+=0.016; synth(t);
     const master=(dmx.current.c10||8)/255;
-    const prop=(dmx.current.c1/255)*0.32*master;
-    const bMod=(dmx.current.c2/255)*0.08;
-    bloom.strength=0.24+bMod*0.08+presence*0.12;
-    const rot=0.00022*(0.5+prop+presence*0.42);
+    const prop=(dmx.current.c1/255)*0.42*master;
+    const bMod=(dmx.current.c2/255)*0.12;
+    bloom.strength=0.32+bMod*0.12+presence*0.12;
+    const rot=0.00032*(0.5+prop+presence*0.52);
     const breath=1.0+Math.sin(t*0.72)*0.022+Math.sin(t*1.22)*0.008+presence*0.042;
     g.scale.setScalar(breath);
     g.rotation.y+=rot; g.rotation.x+=rot*0.08;
     inn.rotation.y-=rot*0.18; inn2.rotation.y+=rot*0.28;
 
     drones.forEach((d,idx)=>{
-      const ch=dmx.current.ch[21+idx]||92;
-      const intensity=(ch/255)*3.8+presence*1.4;
-      const ang=d.userData.ang + t*0.18 + idx*0.12 + prop*0.8;
-      const r=d.userData.baseR + Math.sin(t*0.6+idx)*0.18 + presence*0.32;
-      const y=Math.sin(t*0.42+idx*0.8)*0.42 + presence*0.18;
+      const ch=dmx.current.ch[21+idx]||112;
+      const intensity=(ch/255)*4.8+presence*1.6;
+      const ang=d.userData.ang + t*0.22 + idx*0.12 + prop*0.92;
+      const r=d.userData.baseR + Math.sin(t*0.8+idx)*0.08 + presence*0.18;
+      const y=Math.sin(t*0.52+idx*0.8)*0.18 + presence*0.08;
       d.position.set(Math.cos(ang)*r, y, Math.sin(ang)*r);
       d.lookAt(g.position);
       d.userData.spot.intensity=intensity;
-      d.userData.beam.material.opacity=0.04+intensity*0.016;
-      d.userData.body.material.emissiveIntensity=1.2+intensity*0.22;
-      // GEMMO FX - brillance diamant quand drone passe
+      d.userData.beam.material.opacity=0.08+intensity*0.018;
+      d.userData.body.material.emissiveIntensity=1.42+intensity*0.18;
+      d.userData.satLight.intensity=1.2+intensity*0.22;
       const dist=d.position.distanceTo(g.position);
-      const gemmoBoost=Math.max(0,1-dist/4)*0.42;
-      mat.envMapIntensity=1.88+gemmoBoost+presence*0.42;
-      mat.clearcoat=1.0;
-      m1.emissiveIntensity=C.e1+gemmoBoost*0.08;
+      const gemmo=Math.max(0,1-dist/1.8)*0.62;
+      mat.envMapIntensity=2.12+gemmo+presence*0.42;
+      m1.emissiveIntensity=C.e1+gemmo*0.12;
+      m2.emissiveIntensity=C.e2+gemmo*0.18;
     });
 
     pts.rotation.y+=0.00018; presence*=0.992; comp.render();
@@ -185,7 +190,12 @@ export default function Page(){
   <div style={{width:'100%',height:'100dvh',background:'#000',overflow:'hidden'}}>
     <div ref={ref} style={{position:'fixed',inset:0}}/>
     <div style={{position:'fixed',top:12,left:'50%',transform:'translateX(-50%)',background:on?'#ffffff':'#0a0a0a',color:'#000',padding:'8px 20px',borderRadius:999,fontSize:11,fontWeight:900,zIndex:10}}>
-      {on?`💎 V19.2.3.48 DRONES BLANC NOYAU BLANC 3% GEMMO Z6.12 ${dmxOn?'DMX WS':'DMX SYNTH'} ${Object.values(mod).filter(Boolean).length}/4`:'⚡ V19.2.3.48 BLANC 3% GEMMO'}
+      {on?`💎 V19.2.3.49 SAT 1.15R BLANC 3% GEMMO Z6.12 ${dmxOn?'DMX WS':'DMX SYNTH'} ${Object.values(mod).filter(Boolean).length}/4`:'⚡ V19.2.3.49 SAT PROCHE BLANC'}
+    </div>
+    <div style={{position:'fixed',bottom:12,left:12,right:12,display:'flex',justifyContent:'center',zIndex:10}}>
+      <div style={{padding:'8px 14px',borderRadius:999,background:'rgba(255,255,255,0.92)',color:'#000',fontSize:9,fontWeight:800,textAlign:'center'}}>
+        SAT 6x R0.92 BLANC SPOT 2.2m BEAM CONE 0.92m • DMX CH21-26 • NOYAU BLANC 3% GEMMO IOR2.65 • SYSTEME OPERATIONNEL POLYVALENT
+      </div>
     </div>
   </div>
  );
