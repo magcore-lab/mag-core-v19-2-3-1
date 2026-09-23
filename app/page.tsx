@@ -13,14 +13,12 @@ export default function Page() {
           inset: 0,
           width: "100vw",
           height: "100dvh",
-          minHeight: "100dvh",
-          background: "#000000",
+          background: "#000000", // TOUJOURS NOIR
           display: "grid",
           placeItems: "center",
           placeContent: "center",
           overflow: "hidden",
           cursor: "pointer",
-          userSelect: "none",
           margin: 0,
           padding: 0,
         }}
@@ -29,17 +27,14 @@ export default function Page() {
           style={{
             width: "min(78vw, 420px)",
             height: "min(78vw, 420px)",
-            aspectRatio: "1 / 1",
+            aspectRatio: "1/1",
             borderRadius: "9999px",
             background: isRec ? "#FF0022" : "#FF0033",
             boxShadow: isRec
-              ? "0 0 40px 10px rgba(255,0,34,0.9), 0 0 120px 40px rgba(255,0,34,0.6), 0 0 260px 80px rgba(255,0,34,0.35)"
-              : "0 0 80px 20px rgba(255,0,51,0.55), 0 0 180px 60px rgba(255,0,51,0.22), 0 0 320px 100px rgba(255,0,51,0.12)",
+              ? "0 0 40px 10px rgba(255,0,34,0.9), 0 0 120px 40px rgba(255,0,34,0.55)"
+              : "0 0 80px 20px rgba(255,0,51,0.55), 0 0 180px 60px rgba(255,0,51,0.22)",
             position: "relative",
-            transform: "translateZ(0)",
-            willChange: "transform",
             animation: isRec ? "pulseRec 0.9s ease-in-out infinite" : "pulseOff 3s ease-in-out infinite",
-            transition: "background 0.3s, box-shadow 0.3s",
           }}
         >
           <div
@@ -63,43 +58,41 @@ export default function Page() {
                 transform: "translate(-50%, -50%)",
                 borderRadius: "9999px",
                 background: "#fff",
-                boxShadow: "0 0 20px rgba(255,255,255,0.9)",
+                boxShadow: "0 0 20px #fff",
                 animation: "blinkRec 0.9s step-end infinite",
               }}
             />
           )}
         </div>
 
+        {/* REC LUMINEUX CENTRE */}
         <div
           style={{
             position: "absolute",
-            bottom: "calc(50% - min(78vw, 420px)/2 - 62px)",
             left: "50%",
+            bottom: "calc(50% - min(78vw, 420px)/2 - 62px)",
             transform: `translateX(-50%) translateY(${isRec ? "0" : "12px"})`,
             display: "flex",
             alignItems: "center",
-            justifyContent: "center",
             gap: "10px",
             opacity: isRec ? 1 : 0,
-            transition: "all 0.45s cubic-bezier(0.16,1,0.3,1)",
-            fontFamily: "Geist, monospace",
-            fontSize: "13px",
-            fontWeight: 600,
-            letterSpacing: "0.28em",
             color: "#FF1A2F",
-            textShadow: "0 0 12px rgba(255,26,47,0.9), 0 0 28px rgba(255,26,47,0.55)",
+            fontFamily: "monospace",
+            fontSize: "14px",
+            fontWeight: 700,
+            letterSpacing: "0.32em",
+            textShadow: "0 0 14px rgba(255,26,47,1), 0 0 32px rgba(255,26,47,0.8)",
             pointerEvents: "none",
-            whiteSpace: "nowrap",
+            transition: "all 0.45s",
           }}
         >
           <span
             style={{
-              width: "10px",
-              height: "10px",
+              width: "11px",
+              height: "11px",
               borderRadius: "50%",
               background: "#FF1A2F",
-              boxShadow: "0 0 10px rgba(255,26,47,1), 0 0 22px rgba(255,26,47,0.8)",
-              display: "inline-block",
+              boxShadow: "0 0 12px #FF1A2F, 0 0 26px #FF1A2F",
               animation: "blinkRec 0.9s step-end infinite",
             }}
           />
@@ -107,10 +100,10 @@ export default function Page() {
         </div>
       </main>
       <style>{`
-        html, body { margin:0!important; padding:0!important; width:100%; height:100dvh; background:#000!important; overflow:hidden!important; overscroll-behavior:none }
-        @keyframes pulseOff { 0%,100% { transform: scale(0.985) } 50% { transform: scale(1.03) } }
-        @keyframes pulseRec { 0%,100% { transform: scale(0.96) } 50% { transform: scale(1.08) } }
-        @keyframes blinkRec { 0%,50% { opacity:1 } 51%,100% { opacity:0.15 } }
+        html,body{margin:0!important;padding:0!important;background:#000!important;height:100dvh;overflow:hidden!important}
+        @keyframes pulseOff{0%,100%{transform:scale(0.985)}50%{transform:scale(1.03)}}
+        @keyframes pulseRec{0%,100%{transform:scale(0.96)}50%{transform:scale(1.08)}}
+        @keyframes blinkRec{0%,50%{opacity:1}51%,100%{opacity:0.15}}
       `}</style>
     </>
   );
