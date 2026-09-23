@@ -1,4 +1,3 @@
-
 import type { Metadata } from "next";
 import "./globals.css";
 
@@ -7,7 +6,7 @@ export const metadata: Metadata = {
   title: "MAG CORE — THE CORE™",
   description: "V19 BLACK EDITION | MAG CORE OS — Built on Core Lock V08",
   manifest: "/manifest.webmanifest",
-  icons: { icon: "/icon.png", apple: "/icon.png" },
+  icons: { icon: "/icon", apple: "/icon" },
   openGraph: {
     title: "MAG CORE — THE CORE™",
     description: "V19 BLACK EDITION | Built on Core Lock V08",
@@ -28,9 +27,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr">
-      <body style={{ margin: 0, background: "#000000", overflow: "hidden", width: "100vw", height: "100vh" }}>
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
